@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成語貪吃蛇遊戲生成器</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(to right, #000428, #004e92);
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #start-screen, #game-screen, #game-over {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+        h1 {
+            margin: 0;
+            font-size: 36px;
+            color: #FFD700;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #1f4068;
+            color: #ffffff;
+            border: 1px solid #1b1b2f;
+            border-radius: 5px;
+            margin: 10px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #162447;
+        }
+        #input-text {
+            width: 300px;
+            height: 100px;
+            margin: 10px;
+            border-radius: 5px;
+            border: 1px solid #1b1b2f;
+            padding: 10px;
+            font-size: 16px;
+            resize: none;
+            background-color: #1f4068;
+            color: #ffffff;
+        }
+        #game-screen {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        #game-canvas {
+            background-color: #000000;
+            border: 1px solid #FFD700;
+            width: 600px;
+            height: 600px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+        .controls {
+            position: absolute;
+            bottom: 320px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .control-row {
+            display: flex;
+            justify-content: center;
+        }
+        .control-button {
+            width: 90px;
+            height: 90px;
+            background-color: #1f4068;
+            border: 1px solid #1b1b2f;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 36px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .control-button:hover {
+            background-color: #162447;
+        }
+        #game-over {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #game-over .result-time {
+            color: #FFD700;
+            font-size: 34px;
+        }
+        #game-over a {
+            background-color: #1f4068;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 2px 4px;
+            border-radius: 5px;
+        }
+        #timer, #info-text, #eaten-words {
+            background-color: #1f4068;
+            border: 2px solid #1b1b2f;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+        #timer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #ffffff;
+            font-size: 24px;
+        }
+        #info-text {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #ffffff;
+            font-size: 24px;
+            width: 200px;
+        }
+        #eaten-words {
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+            color: #ffffff;
+            font-size: 24px;
+            width: 200px;
+        }
+        #eaten-words h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #FFD700;
+        }
+        .button-row {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+        #start-button, #save-button {
+            background-color: #0000FF;
+            margin: 10px 5px;
+        }
+        #game-topics {
+            margin-top: 20px;
+            background-color: #2e2e2e;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+        .designed-by {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 14px;
+            color: #ffffff;
+        }
+        .designed-by a {
+            color: #FFD700;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <h1>成語貪吃蛇遊戲生成器</h1>
+        <textarea id="input-text" placeholder="請輸入文字，每行一組...">守株待兔,比喻只依賴機會的到來，不主動努力，盲目等待成功。
+隔岸觀火,比喻置身事外，只顧自己的利益，不願幫助他人。</textarea>
+        <button id="submit-button">送出</button>
+        <div class="button-row">
+            <button id="start-button" style="display:none;">開始</button>
+            <button id="save-button" style="display:none;">另存遊戲</button>
+        </div>
+        <div id="game-topics" style="display:none;">
+            <h2>遊戲題目</h2>
+            <ul id="topics-list"></ul>
+        </div>
+    </div>
+
+    <div id="game-screen">
+        <div id="info-text"></div>
+        <div id="timer">遊戲時間: <span id="time-elapsed">0</span> 秒</div>
+        <div id="eaten-words">
+            <h2>已吃到的文字</h2>
+            <div id="eaten-content"></div>
+        </div>
+        <canvas id="game-canvas" width="600" height="600"></canvas>
+        <div class="controls">
+            <div class="control-row">
+                <div class="control-button" id="up">↑</div>
+            </div>
+            <div class="control-row">
+                <div class="control-button" id="left">←</div>
+                <div class="control-button" id="down">↓</div>
+                <div class="control-button" id="right">→</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-over">
+        <div id="result-text"></div>
+        <button id="restart-button">重新開始</button>
+    </div>
+
+    <div class="designed-by">
+        Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">阿剛老師</a>
+    </div>
+
+    <script src="snake_game.js"></script>
+    <script>
+        window.onload = function() {
+            document.getElementById('submit-button').click();
+            document.getElementById('start-button').click();
+        }
+    </script>
+</body>
+</html>
