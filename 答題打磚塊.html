@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>答題打磚塊</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: url('https://images.unsplash.com/photo-1719927537229-2b648a6685fa') no-repeat center center fixed;
+            background-size: cover;
+            color: #FFFFFF;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            -webkit-touch-callout: none; /* iOS Safari */
+            -webkit-user-select: none;   /* Safari */
+            -khtml-user-select: none;    /* Konqueror HTML */
+            -moz-user-select: none;      /* Old versions of Firefox */
+            -ms-user-select: none;       /* Internet Explorer/Edge */
+            user-select: none;           /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
+        }
+        h1 {
+            text-align: center;
+            margin: 10px 0; /* 縮小上下空白區10PX */
+            font-size: 48px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        canvas {
+            display: block;
+            background: rgba(0, 0, 0, 0.5);
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+        }
+        .button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 75px;
+            height: 175px; /* 加大高度100PX */
+            background-color: rgba(255, 255, 255, 0.5);
+            color: #000000;
+            font-size: 36px;
+            text-align: center;
+            line-height: 175px; /* 調整線高度 */
+            border-radius: 10px;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 10px rgba(255, 255, 255, 0.8) inset;
+        }
+        .left-button {
+            left: 20px;
+        }
+        .right-button {
+            right: 20px;
+        }
+        .button svg {
+            width: 36px;
+            height: 36px;
+        }
+        .switch-area {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            width: 50px;
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0); /* 設為透明度100% */
+            cursor: pointer;
+        }
+        .hidden {
+            display: none;
+        }
+        #generatorScreen {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.8) inset;
+            color: #FFFFFF;
+            width: 80%;
+            max-width: 800px;
+            margin: 0 auto;
+            overflow: auto;
+        }
+        #inputBox {
+            width: 90%;
+            font-size: 18px;
+            color: #000000;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8) inset;
+            resize: none;
+        }
+        #resultTable {
+            width: 100%;
+            margin: 20px 0;
+            font-size: 14px;
+            border-collapse: collapse;
+            background: rgba(0, 0, 0, 0.5);
+            color: #FFFFFF;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.8) inset;
+        }
+        #resultTable th, #resultTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        #resultTable th {
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+        #resultTable td:nth-child(2) {
+            color: rgba(255, 255, 255, 1); /* 設為透明度100% */
+        }
+        .answer-button {
+            width: calc(100% - 20px);
+            height: 50px; /* 增加高度 */
+            margin: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            color: #000000;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 10px rgba(255, 255, 255, 0.8) inset;
+            background-color: rgba(255, 255, 255, 0.7);
+        }
+        #questionLayer {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            width: 400px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.8) inset;
+            color: #FFFFFF;
+        }
+        #questionLayer h2 {
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        #timer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            font-size: 20px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 10px rgba(255, 255, 255, 0.8) inset;
+        }
+        #endLayer {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.8) inset;
+            text-align: center;
+            color: #FFFFFF;
+        }
+        #endLayer h2 {
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+        #failureText {
+            font-size: 36px;
+            color: red;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+        }
+        #successText {
+            font-size: 36px;
+            color: blue;
+            text-shadow: 0 0 10px rgba(0, 0, 255, 0.8);
+        }
+        .footer {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #00BFFF;
+            text-decoration: none;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <h1>答題打磚塊</h1>
+    <div id="gameScreen">
+        <canvas id="myCanvas" width="960" height="640"></canvas>
+        <div class="button left-button" id="leftButton">
+            <svg viewBox="0 0 24 24">
+                <polyline points="15 18 9 12 15 6" fill="none" stroke="#000000" stroke-width="2"/>
+            </svg>
+        </div>
+        <div class="button right-button" id="rightButton">
+            <svg viewBox="0 0 24 24">
+                <polyline points="9 6 15 12 9 18" fill="none" stroke="#000000" stroke-width="2"/>
+            </svg>
+        </div>
+        <div class="switch-area" id="switchArea"></div>
+        <div id="questionLayer">
+            <h2 id="questionText"></h2>
+            <div id="answerButtons"></div>
+        </div>
+        <div id="timer" class="hidden">時間: 0秒</div>
+        <div id="endLayer">
+            <h2 id="totalTime"></h2>
+            <h2 id="failureText" class="hidden">失敗</h2>
+            <h2 id="successText" class="hidden">太棒了!過關了!</h2>
+            <p id="correctCount"></p>
+            <button id="restartButton" class="answer-button">重新開始玩</button>
+        </div>
+    </div>
+    <div id="generatorScreen" class="hidden">
+        <h1>打磚塊遊戲生成器</h1>
+        <textarea id="inputBox" placeholder="輸入你的設定..." rows="10">
+/* 把題庫的csv用excel開啟後，把題目到選項4的欄位選起來複製貼到下面，再存檔即可 */
+對阿剛老師的最佳形容詞是什麼?,4,帥,很帥,超帥,帥到爆了!
+		</textarea><br>
+        <input type="submit" id="submitButton" value="送出" class="answer-button">
+        <button id="startGameButton" class="hidden answer-button">開始遊玩</button>
+        <button id="downloadButton" class="answer-button hidden">下載完整遊戲</button>
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th>題目</th>
+                    <th>答案</th>
+                    <th>選項1</th>
+                    <th>選項2</th>
+                    <th>選項3</th>
+                    <th>選項4</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div class="footer">
+        Made by <a href="https://kentxchang.blogspot.tw" target="_blank">阿剛老師</a>
+    </div>
+    <script>
+        var canvas = document.getElementById("myCanvas");
+        var ctx = canvas.getContext("2d");
+
+        var ballRadius = 20;
+        var x = canvas.width / 2;
+        var y = canvas.height - 60;
+        var dx = 4;
+        var dy = -4;
+
+        var paddleHeight = 20;
+        var paddleWidth = 150;
+        var paddleX = (canvas.width - paddleWidth) / 2;
+
+        var rightPressed = false;
+        var leftPressed = false;
+
+        var bricks = [];
+        var questions = [];
+        var currentQuestion = null;
+        var correctAnswers = 0;
+
+        var paused = true;
+        var gameStarted = false;
+        var timer;
+        var startTime;
+        var elapsedTime = 0;
+
+        document.addEventListener("keydown", keyDownHandler, false);
+        document.addEventListener("keyup", keyUpHandler, false);
+        document.addEventListener("keydown", function(e) {
+            if (e.key == "r" || e.key == "R") {
+                switchScreen();
+            }
+        });
+
+        document.getElementById("leftButton").addEventListener("mousedown", function() {
+            leftPressed = true;
+            if (!gameStarted) {
+                startGame();
+            }
+        });
+        document.getElementById("leftButton").addEventListener("mouseup", function() {
+            leftPressed = false;
+        });
+        document.getElementById("leftButton").addEventListener("touchstart", function() {
+            leftPressed = true;
+            if (!gameStarted) {
+                startGame();
+            }
+        });
+        document.getElementById("leftButton").addEventListener("touchend", function() {
+            leftPressed = false;
+        });
+
+        document.getElementById("rightButton").addEventListener("mousedown", function() {
+            rightPressed = true;
+            if (!gameStarted) {
+                startGame();
+            }
+        });
+        document.getElementById("rightButton").addEventListener("mouseup", function() {
+            rightPressed = false;
+        });
+        document.getElementById("rightButton").addEventListener("touchstart", function() {
+            rightPressed = true;
+            if (!gameStarted) {
+                startGame();
+            }
+        });
+        document.getElementById("rightButton").addEventListener("touchend", function() {
+            rightPressed = false;
+        });
+
+        document.getElementById("switchArea").addEventListener("click", switchScreen);
+
+        document.getElementById("submitButton").addEventListener("click", function() {
+            var inputBox = document.getElementById("inputBox").value;
+            var lines = inputBox.split('\n');
+            var tableBody = document.querySelector("#resultTable tbody");
+            tableBody.innerHTML = ''; // 清空表格內容
+            questions = [];
+
+            lines.forEach(function(line) {
+                var fields = line.split(/,|\t/);
+                if (fields.length === 6) {
+                    var row = document.createElement('tr');
+                    fields.forEach(function(field) {
+                        var cell = document.createElement('td');
+                        cell.textContent = field.trim();
+                        row.appendChild(cell);
+                    });
+                    tableBody.appendChild(row);
+
+                    var question = {
+                        text: fields[0].trim(),
+                        answer: fields[1].trim(),
+                        options: [fields[2].trim(), fields[3].trim(), fields[4].trim(), fields[5].trim()]
+                    };
+                    questions.push(question);
+                }
+            });
+
+            document.getElementById("startGameButton").classList.remove("hidden");
+            document.getElementById("downloadButton").classList.remove("hidden");
+        });
+
+        document.getElementById("downloadButton").addEventListener("click", function() {
+            var originalHtml = document.documentElement.outerHTML;
+            var inputBoxContent = document.getElementById("inputBox").value;
+
+            var newHtml = originalHtml.replace(
+                /<textarea id="inputBox"[^>]*>[\s\S]*?<\/textarea>/,
+                `<textarea id="inputBox" placeholder="輸入你的設定..." rows="10" style="width: 80%; font-size: 24px; color: #000000;">\n${inputBoxContent}\n</textarea>`
+            );
+
+            var blob = new Blob([newHtml], { type: 'text/html' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = '答題打磚塊-自訂題庫.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+
+        document.getElementById("startGameButton").addEventListener("click", function() {
+            switchScreenToGame();
+        });
+
+        document.getElementById("restartButton").addEventListener("click", function() {
+            document.getElementById("endLayer").style.display = "none";
+            switchScreenToGame();
+        });
+
+        function keyDownHandler(e) {
+            if (e.key == "Right" || e.key == "ArrowRight") {
+                rightPressed = true;
+                if (!gameStarted) {
+                    startGame();
+                }
+            } else if (e.key == "Left" || e.key == "ArrowLeft") {
+                leftPressed = true;
+                if (!gameStarted) {
+                    startGame();
+                }
+            }
+        }
+
+        function keyUpHandler(e) {
+            if (e.key == "Right" || e.key == "ArrowRight") {
+                rightPressed = false;
+            } else if (e.key == "Left" || e.key == "ArrowLeft") {
+                leftPressed = false;
+            }
+        }
+
+        function collisionDetection() {
+            for (var i = 0; i < bricks.length; i++) {
+                var b = bricks[i];
+                if (b.status == 1) {
+                    if (x > b.x && x < b.x + b.width && y > b.y && y < b.y + b.height) {
+                        dy = -dy;
+                        currentQuestion = questions[i];
+                        paused = true;
+                        showQuestionLayer();
+                        break;
+                    }
+                }
+            }
+        }
+
+        function showQuestionLayer() {
+            var questionLayer = document.getElementById("questionLayer");
+            var questionText = document.getElementById("questionText");
+            var answerButtons = document.getElementById("answerButtons");
+
+            questionText.textContent = currentQuestion.text;
+            answerButtons.innerHTML = '';
+
+            var colors = ['#0095DD', '#4CAF50', '#F44336', '#FF9800'];
+            var options = [...currentQuestion.options];
+            for (let i = options.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [options[i], options[j]] = [options[j], options[i]];
+                [colors[i], colors[j]] = [colors[j], colors[i]];
+            }
+
+            options.forEach(function(option, index) {
+                var button = document.createElement('button');
+                button.className = 'answer-button';
+                button.style.backgroundColor = colors[index];
+                button.textContent = option;
+                button.addEventListener('click', function() {
+                    if (option === currentQuestion.options[currentQuestion.answer === '1' ? 0 : currentQuestion.answer === '2' ? 1 : currentQuestion.answer === '3' ? 2 : 3]) {
+                        bricks[questions.indexOf(currentQuestion)].status = 0;
+                        dx *= 1.05;
+                        dy *= 1.05;
+                        correctAnswers++;
+                    }
+                    hideQuestionLayer();
+                });
+                answerButtons.appendChild(button);
+            });
+
+            questionLayer.style.display = 'block';
+        }
+
+        function hideQuestionLayer() {
+            var questionLayer = document.getElementById("questionLayer");
+            questionLayer.style.display = 'none';
+            paused = false;
+        }
+
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = "#FFFFFF";
+            ctx.shadowColor = "#FFFFFF";
+            ctx.shadowBlur = 20; /* 超級光暈 */
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+            ctx.fillStyle = "#DDA0DD"; /* 淡紫色 */
+            ctx.shadowColor = "#DDA0DD";
+            ctx.shadowBlur = 20; /* 超級光暈 */
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        function drawBricks() {
+            bricks.forEach(function(b) {
+                if (b.status == 1) {
+                    const gradient = ctx.createLinearGradient(b.x, b.y, b.x + b.width, b.y + b.height);
+                    gradient.addColorStop(0, b.color1);
+                    gradient.addColorStop(1, b.color2);
+                    ctx.beginPath();
+                    ctx.rect(b.x, b.y, b.width, b.height);
+                    ctx.fillStyle = gradient;
+                    ctx.shadowColor = b.color1;
+                    ctx.shadowBlur = 10;
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            });
+        }
+
+        function draw() {
+            if (!paused) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawBricks();
+                drawBall();
+                drawPaddle();
+                collisionDetection();
+
+                if (x + dx > canvas.width - ballRadius || x - ballRadius + dx < 0) {
+                    dx = -dx;
+                }
+                if (y + dy < ballRadius) {
+                    dy = -dy;
+                } else if (y + dy > canvas.height - ballRadius) {
+                    if (x > paddleX && x < paddleX + paddleWidth) {
+                        dy = -dy;
+                    } else {
+                        endGame(false);
+                    }
+                }
+
+                if (rightPressed && paddleX < canvas.width - paddleWidth) {
+                    paddleX += 7;
+                } else if (leftPressed && paddleX > 0) {
+                    paddleX -= 7;
+                }
+
+                x += dx;
+                y += dy;
+
+                if (bricks.every(b => b.status == 0)) {
+                    endGame(true);
+                }
+            }
+            requestAnimationFrame(draw);
+        }
+
+        function switchScreen() {
+            paused = true;
+            document.getElementById("gameScreen").classList.add("hidden");
+            document.getElementById("generatorScreen").classList.remove("hidden");
+            clearInterval(timer);
+            document.getElementById("timer").classList.add("hidden");
+        }
+
+        function switchScreenToGame() {
+            document.getElementById("gameScreen").classList.remove("hidden");
+            document.getElementById("generatorScreen").classList.add("hidden");
+            initializeGame();
+        }
+
+        function initializeGame() {
+            bricks = [];
+            var brickWidth = 960 / 5 - 10;
+            var brickHeight = 40;
+            correctAnswers = 0;
+
+            var positions = [];
+            for (var i = 0; i < 5; i++) {
+                for (var j = 0; j < 5; j++) {
+                    positions.push({ x: i * (brickWidth + 10) + 5, y: j * (brickHeight + 10) + 30 });
+                }
+            }
+
+            // Shuffle positions
+            positions = positions.sort(() => Math.random() - 0.5);
+
+            for (var i = 0; i < questions.length; i++) {
+                var color1 = getRandomColor();
+                var color2 = getRandomColor();
+                var widthMultiplier = Math.random() < 0.5 ? 1 : 0.5;
+                bricks.push({ x: positions[i].x, y: positions[i].y, width: brickWidth * widthMultiplier, height: brickHeight, status: 1, color1: color1, color2: color2 });
+            }
+
+            x = canvas.width / 2;
+            y = canvas.height - 60;
+            dx = 4;
+            dy = -4;
+            paddleX = (canvas.width - paddleWidth) / 2;
+            gameStarted = false;
+            paused = true;
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            elapsedTime = 0;
+            document.getElementById("timer").classList.remove("hidden");
+            timer = setInterval(function() {
+                elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById("timer").textContent = "時間: " + elapsedTime + "秒";
+            }, 1000);
+        }
+
+        function startGame() {
+            paused = false;
+            gameStarted = true;
+            startTimer();
+        }
+
+        function endGame(success) {
+            clearInterval(timer);
+            paused = true;
+            gameStarted = false;
+            document.getElementById("totalTime").textContent = "遊戲總時間: " + elapsedTime + "秒";
+            document.getElementById("correctCount").textContent = "答對題數: " + correctAnswers;
+            if (!success) {
+                document.getElementById("failureText").classList.remove("hidden");
+                document.getElementById("successText").classList.add("hidden");
+            } else {
+                document.getElementById("failureText").classList.add("hidden");
+                document.getElementById("successText").classList.remove("hidden");
+            }
+            document.getElementById("endLayer").style.display = "block";
+        }
+
+        // Initialize game and check input box content on load
+        window.onload = function() {
+            initializeGame();
+
+            var inputBox = document.getElementById("inputBox").value.trim();
+            if (inputBox !== "") {
+                document.getElementById("submitButton").click();
+                document.getElementById("startGameButton").click();
+            }
+        };
+
+        draw();
+    </script>
+</body>
+</html>
