@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>搜尋 Wordwall 作品</title>
+<script>
+  function searchWordwall() {
+    var inputText = document.getElementById('searchInput').value;
+    var url = 'https://wordwall.net/tc/community/' + encodeURIComponent(inputText);
+    window.open(url, '_blank');
+  }
+</script>
+</head>
+<body>
+
+<h3>搜尋 Wordwall 作品</h3>
+<input type="text" id="searchInput" placeholder="輸入文字">
+<button onclick="searchWordwall()">搜尋</button>
+
+</body>
+</html>

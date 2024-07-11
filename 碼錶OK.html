@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>碼錶</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    #container {
+        max-width: 800px;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .input-container {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .input-container label {
+        font-size: 1.2em;
+        margin-right: 10px;
+    }
+
+    .input-container input {
+        font-size: 1em;
+        padding: 10px 20px;
+        margin-right: 10px;
+        text-align: center;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .input-container button {
+        font-size: 1em;
+        padding: 8px 16px;
+        cursor: pointer;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+    }
+
+    .stopwatch-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        margin-bottom: 20px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 10px;
+        text-align: center;
+    }
+
+    .stopwatch {
+        font-size: 3em;
+        text-align: center;
+        margin-bottom: 10px;
+        padding: 20px;
+        border-radius: 5px;
+    }
+
+    .btn {
+        font-size: 1.3em;
+        padding: 8px 16px;
+        cursor: pointer;
+        background-color: #28a745;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        margin-right: 5px;
+    }
+
+    .btn:hover {
+        background-color: #218838;
+    }
+
+    #designer {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        font-size: 0.8em;
+    }
+
+    .hidden {
+        display: none;
+    }
+</style>
+</head>
+<body>
+
+<div id="container">
+    <div class="input-container">
+        <label for="numStopwatches">要開啟碼錶個數:</label>
+        <input type="number" id="numStopwatches" min="1" value="1" />
+        <button id="createStopwatchesBtn" class="btn">建立碼錶</button>
+    </div>
+
+    <div class="stopwatch-container" id="stopwatchContainer">
+        
+    </div>
+
+    <div class="input-container hidden" id="controlBtns">
+        <button id="startAllBtn" class="btn">一鍵全開始</button>
+        <button id="resetAllBtn" class="btn">一鍵全重置</button>
+    </div>
+</div>
+
+<div id="designer">
+    Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">kentxchang</a>
+</div>
+
+<script>
+    const numStopwatchesInput = document.getElementById('numStopwatches');
+    const createStopwatchesBtn = document.getElementById('createStopwatchesBtn');
+    const startAllBtn = document.getElementById('startAllBtn');
+    const resetAllBtn = document.getElementById('resetAllBtn');
+    let intervalIds = [];
+
+    const lightColors = ['#FFFFCC', '#FFCCCC', '#FFD699', '#CCFFCC', '#CCFFFF'];
+
+    createStopwatchesBtn.addEventListener('click', () => {
+        const numStopwatches = parseInt(numStopwatchesInput.value);
+        createStopwatches(numStopwatches);
+        document.getElementById('controlBtns').classList.remove('hidden');
+    });
+
+    startAllBtn.addEventListener('click', () => {
+        startAllStopwatches();
+    });
+
+    resetAllBtn.addEventListener('click', () => {
+        resetAllStopwatches();
+    });
+
+    function createStopwatches(numStopwatches) {
+        const stopwatchContainer = document.getElementById('stopwatchContainer');
+        stopwatchContainer.innerHTML = '';
+        intervalIds = [];
+
+        if (numStopwatches > 0) {
+            const numRows = Math.ceil(numStopwatches / 3);
+
+            let count = 1;
+            let prevColorIndex = -1;
+
+            for (let i = 0; i < numRows; i++) {
+                const row = document.createElement('tr');
+                for (let j = 0; j < 3; j++) {
+                    const cell = document.createElement('td');
+                    if (count <= numStopwatches) {
+                        let colorIndex;
+                        do {
+                            colorIndex = Math.floor(Math.random() * lightColors.length);
+                        } while (colorIndex === prevColorIndex);
+                        prevColorIndex = colorIndex;
+
+                        cell.style.backgroundColor = lightColors[colorIndex];
+                        cell.innerHTML = `
+                            <div class="stopwatch" id="stopwatch${count}">00:00:00</div>
+                            <div class="stopwatch-controls">
+                                <button class="btn" onclick="startStopwatch(${count})">開始</button>
+                                <button class="btn" onclick="pauseStopwatch(${count})">暫停</button>
+                                <button class="btn" onclick="resetStopwatch(${count})">重置</button>
+                            </div>
+                        `;
+                        count++;
+                        intervalIds.push(null);
+                    }
+                    row.appendChild(cell);
+                }
+                stopwatchContainer.appendChild(row);
+            }
+        }
+    }
+
+    function startAllStopwatches() {
+        for (let i = 1; i <= intervalIds.length; i++) {
+            startStopwatch(i);
+        }
+    }
+
+    function resetAllStopwatches() {
+        for (let i = 1; i <= intervalIds.length; i++) {
+            resetStopwatch(i);
+        }
+    }
+
+    function startStopwatch(id) {
+        const index = id - 1;
+        if (!intervalIds[index]) {
+            intervalIds[index] = setInterval(() => {
+                updateStopwatch(document.getElementById(`stopwatch${id}`));
+            }, 1000);
+        }
+    }
+
+    function pauseStopwatch(id) {
+        const index = id - 1;
+        clearInterval(intervalIds[index]);
+        intervalIds[index] = null;
+    }
+
+    function resetStopwatch(id) {
+        clearInterval(intervalIds[id - 1]);
+        intervalIds[id - 1] = null;
+        document.getElementById(`stopwatch${id}`).textContent = '00:00:00';
+    }
+
+    function updateStopwatch(stopwatch) {
+        const timeParts = stopwatch.textContent.split(':').map(part => parseInt(part));
+        let [hours, minutes, seconds] = timeParts;
+
+        seconds++;
+        if (seconds === 60) {
+            seconds = 0;
+            minutes++;
+            if (minutes === 60) {
+                minutes = 0;
+                hours++;
+            }
+        }
+
+        stopwatch.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    }
+
+    function pad(num) {
+        return num < 10 ? `0${num}` : num;
+    }
+</script>
+
+</body>
+</html>

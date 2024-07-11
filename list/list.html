@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我與AI討論所生成的小工具列表</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            max-width: 800px;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-left: auto;
+            margin-right: auto;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+        td:first-child {
+            text-align: center;
+        }
+        a {
+            text-decoration: none;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        #upload-button, #download-button {
+            position: fixed;
+            bottom: 10px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        #upload-button:hover, #download-button:hover {
+            background-color: #45a049;
+        }
+        #upload-button {
+            left: 10px;
+        }
+        #download-button {
+            left: 150px;
+        }
+        #file-input {
+            display: none;
+        }
+        .footer {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            th, td {
+                padding: 5px;
+            }
+            #upload-button, #download-button {
+                padding: 8px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>我與AI討論所生成的小工具列表</h1>
+    <table id="data-table">
+        <thead>
+            <tr>
+                <th>序號</th>
+                <th>標題</th>
+                <th>備註</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <input type="file" id="file-input" accept=".csv">
+    <button id="upload-button">上傳CSV</button>
+    <button id="download-button">下載HTML</button>
+    <div class="footer">Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">阿剛老師</a></div>
+
+    <script>
+        document.getElementById('upload-button').addEventListener('click', function() {
+            document.getElementById('file-input').click();
+        });
+
+        document.getElementById('file-input').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const text = e.target.result;
+                    const rows = text.split('\n');
+                    const tableBody = document.querySelector('#data-table tbody');
+                    tableBody.innerHTML = '';
+
+                    const fetchPromises = rows.map((row, index) => {
+                        const columns = row.split(',');
+                        if (columns.length >= 2) {
+                            const url = columns[0].trim();
+                            const remark = columns[1].trim();
+
+                            return fetch(url)
+                                .then(response => response.text())
+                                .then(html => {
+                                    const parser = new DOMParser();
+                                    const doc = parser.parseFromString(html, 'text/html');
+                                    const title = doc.querySelector('title') ? doc.querySelector('title').innerText : '無標題';
+                                    
+                                    return { index, title, url, remark };
+                                })
+                                .catch(error => {
+                                    console.error('Error fetching URL:', error);
+                                    return { index, title: '無法抓取標題', url, remark };
+                                });
+                        }
+                    });
+
+                    Promise.all(fetchPromises).then(results => {
+                        results
+                            .filter(result => result)  // Remove any undefined results
+                            .sort((a, b) => a.index - b.index)  // Sort by original index to maintain CSV order
+                            .forEach((result, i) => {
+                                const tr = document.createElement('tr');
+                                const numberTd = document.createElement('td');
+                                numberTd.textContent = i + 1;
+                                const titleTd = document.createElement('td');
+                                const link = document.createElement('a');
+                                link.href = result.url;
+                                link.textContent = result.title;
+                                link.target = '_blank';
+                                titleTd.appendChild(link);
+                                const remarkTd = document.createElement('td');
+                                remarkTd.textContent = result.remark;
+                                
+                                tr.appendChild(numberTd);
+                                tr.appendChild(titleTd);
+                                tr.appendChild(remarkTd);
+                                tableBody.appendChild(tr);
+                            });
+                    });
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        document.getElementById('download-button').addEventListener('click', function() {
+            const tableHtml = document.querySelector('table').outerHTML;
+            const style = `
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f0f0f0; color: #333; text-align: center; }
+                    h1 { text-align: center; color: #4CAF50; margin-bottom: 20px; }
+                    table { width: 100%; max-width: 800px; border-collapse: collapse; margin-top: 20px; background-color: white; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); margin-left: auto; margin-right: auto; }
+                    table, th, td { border: 1px solid #ddd; }
+                    th, td { padding: 10px; text-align: left; }
+                    th { background-color: #4CAF50; color: white; }
+                    tr:nth-child(even) { background-color: #f9f9f9; }
+                    tr:nth-child(odd) { background-color: #ffffff; }
+                    td:first-child { text-align: center; }
+                    a { text-decoration: none; font-weight: bold; color: #4CAF50; }
+                </style>
+            `;
+            const html = `
+                <!DOCTYPE html>
+                <html lang="zh-TW">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>我與AI討論所生成的小工具列表</title>
+                    ${style}
+                </head>
+                <body>
+                    <h1>我與AI討論所生成的小工具列表</h1>
+                    ${tableHtml}
+                </body>
+                </html>
+            `;
+
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const dateStr = yyyy + mm + dd;
+
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'list' + dateStr + '.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>

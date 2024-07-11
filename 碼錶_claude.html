@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>多功能碼錶</title>
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        flex-direction: column;
+    }
+
+    #container {
+        max-width: 1200px;
+        width: 95%;
+        padding: 30px;
+        background-color: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .input-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .input-container label {
+        font-size: 1.2em;
+        color: #333;
+        margin: 10px;
+    }
+
+    .input-container select, .input-container input {
+        font-size: 1.1em;
+        padding: 10px 15px;
+        margin: 10px;
+        text-align: center;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+    }
+
+    .btn {
+        font-size: 1.1em;
+        padding: 10px 20px;
+        cursor: pointer;
+        border: none;
+        border-radius: 8px;
+        transition: background-color 0.3s;
+        margin: 10px;
+    }
+
+    .blue-btn {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .blue-btn:hover {
+        background-color: #0056b3;
+    }
+
+    .stopwatch-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 20px;
+        width: 100%;
+    }
+
+    @media (min-width: 1200px) {
+        .stopwatch-container {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
+
+    @media (max-width: 1199px) and (min-width: 768px) {
+        .stopwatch-container {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width: 767px) {
+        .stopwatch-container {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .stopwatch-item {
+        position: relative;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        background-color: #ffffff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .stopwatch-number {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .stopwatch {
+        font-size: 3em;
+        margin-bottom: 15px;
+        color: #333;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .stopwatch-controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .stopwatch-controls .btn {
+        font-size: 0.9em;
+        padding: 8px 15px;
+    }
+
+    #controlBtns {
+        text-align: center;
+        margin-top: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    #designer {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 0.9em;
+        color: #666;
+    }
+
+    .hidden {
+        display: none;
+    }
+</style>
+</head>
+<body>
+
+<div id="container">
+    <div class="input-container">
+        <label for="formatSelect">選擇計時格式：</label>
+        <select id="formatSelect">
+            <option value="hms">時:分:秒</option>
+            <option value="msm">分:秒:毫秒</option>
+        </select>
+        <label for="numStopwatches">要開啟碼錶個數：</label>
+        <input type="number" id="numStopwatches" min="1" value="1" />
+        <button id="createStopwatchesBtn" class="btn blue-btn">建立碼錶</button>
+    </div>
+
+    <div class="stopwatch-container" id="stopwatchContainer"></div>
+
+    <div id="controlBtns" class="hidden">
+        <button id="startAllBtn" class="btn blue-btn hidden">一鍵全開始</button>
+        <button id="resetAllBtn" class="btn blue-btn hidden">一鍵全重置</button>
+        <button id="pauseSequentialBtn" class="btn hidden" style="background-color: #ff0000; color: white;">依序暫停(1)</button>
+        <button id="exportTimesBtn" class="btn hidden" style="background-color: #808080; color: white;">匯出計時</button>
+    </div>
+
+    <div id="designer">
+        Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">kentxchang</a>
+    </div>
+</div>
+
+<script>
+    const formatSelect = document.getElementById('formatSelect');
+    const numStopwatchesInput = document.getElementById('numStopwatches');
+    const createStopwatchesBtn = document.getElementById('createStopwatchesBtn');
+    const startAllBtn = document.getElementById('startAllBtn');
+    const resetAllBtn = document.getElementById('resetAllBtn');
+    const pauseSequentialBtn = document.getElementById('pauseSequentialBtn');
+    const exportTimesBtn = document.getElementById('exportTimesBtn');
+    let intervalIds = [];
+    let pauseIndex = 1;
+    let currentFormat = 'hms';  // 初始格式
+    let remainingStopwatches = 0;  // 剩餘碼錶數量
+
+    const lightColors = [
+        '#FFFFCC', '#FFCCCC', '#FFD699', '#CCFFCC', '#CCFFFF',
+        '#E6E6FA', '#FFF0F5', '#F0FFF0', '#F0F8FF', '#FFF5EE',
+        '#F0FFFF', '#FFF8DC', '#FAEBD7', '#FFE4E1', '#F5F5DC'
+    ];
+
+    formatSelect.addEventListener('change', () => {
+        currentFormat = formatSelect.value;
+    });
+
+    createStopwatchesBtn.addEventListener('click', () => {
+        if (intervalIds.length > 0) {
+            // 暫停所有碼錶並清除
+            resetAllStopwatches();
+            document.getElementById('stopwatchContainer').innerHTML = '';
+        }
+        const numStopwatches = parseInt(numStopwatchesInput.value);
+        createStopwatches(numStopwatches);
+        remainingStopwatches = numStopwatches;
+        pauseIndex = 1;
+        updatePauseSequentialBtnText();
+        document.getElementById('controlBtns').classList.remove('hidden');
+        startAllBtn.classList.remove('hidden');
+        resetAllBtn.classList.remove('hidden');
+        pauseSequentialBtn.classList.remove('hidden');
+        exportTimesBtn.classList.remove('hidden');
+    });
+
+    startAllBtn.addEventListener('click', startAllStopwatches);
+    resetAllBtn.addEventListener('click', resetAllStopwatches);
+    pauseSequentialBtn.addEventListener('click', () => {
+        if (pauseIndex <= intervalIds.length) {
+            pauseStopwatch(pauseIndex);
+            pauseIndex++;
+            updatePauseSequentialBtnText();
+        }
+    });
+
+    exportTimesBtn.addEventListener('click', exportTimesToCSV);
+
+    function updatePauseSequentialBtnText() {
+        pauseSequentialBtn.textContent = `依序暫停(${pauseIndex})`;
+    }
+
+    function createStopwatches(numStopwatches) {
+        const stopwatchContainer = document.getElementById('stopwatchContainer');
+        intervalIds = [];
+
+        let colorIndex = 0;
+        for (let i = 1; i <= numStopwatches; i++) {
+            const backgroundColor = lightColors[colorIndex];
+            const buttonColor = generateButtonColor(backgroundColor);
+            const textColor = getContrastColor(buttonColor);
+            const initialTime = currentFormat === 'hms' ? '00:00:00' : '00:00:000';
+
+            const stopwatchItem = document.createElement('div');
+            stopwatchItem.classList.add('stopwatch-item');
+            stopwatchItem.style.backgroundColor = backgroundColor;
+            stopwatchItem.innerHTML = `
+                <div class="stopwatch-number">${i}</div>
+                <div class="stopwatch" id="stopwatch${i}">${initialTime}</div>
+                <div class="stopwatch-controls">
+                    <button class="btn" onclick="startStopwatch(${i})" style="background-color: ${buttonColor}; color: ${textColor};">開始</button>
+                    <button class="btn" onclick="pauseStopwatch(${i})" style="background-color: ${buttonColor}; color: ${textColor};">暫停</button>
+                    <button class="btn" onclick="resetStopwatch(${i})" style="background-color: ${buttonColor}; color: ${textColor};">重置</button>
+                </div>
+            `;
+            stopwatchContainer.appendChild(stopwatchItem);
+            intervalIds.push(null);
+
+            colorIndex = (colorIndex + 1) % lightColors.length;
+        }
+    }
+
+    function generateButtonColor(backgroundColor) {
+        let r = parseInt(backgroundColor.slice(1, 3), 16);
+        let g = parseInt(backgroundColor.slice(3, 5), 16);
+        let b = parseInt(backgroundColor.slice(5, 7), 16);
+
+        r = Math.max(0, r - 50);
+        g = Math.max(0, g - 50);
+        b = Math.max(0, b - 50);
+
+        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    }
+
+    function getContrastColor(hexColor) {
+        const r = parseInt(hexColor.slice(1, 3), 16);
+        const g = parseInt(hexColor.slice(3, 5), 16);
+        const b = parseInt(hexColor.slice(5, 7), 16);
+
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+        return brightness > 128 ? '#000000' : '#FFFFFF';
+    }
+
+    function startAllStopwatches() {
+        for (let i = 1; i <= intervalIds.length; i++) {
+            startStopwatch(i);
+        }
+    }
+
+    function resetAllStopwatches() {
+        for (let i = 1; i <= intervalIds.length; i++) {
+            resetStopwatch(i);
+        }
+        remainingStopwatches = intervalIds.length;
+        pauseIndex = 1;
+        updatePauseSequentialBtnText();
+    }
+
+    function startStopwatch(id) {
+        const index = id - 1;
+        if (!intervalIds[index]) {
+            const interval = currentFormat === 'hms' ? 1000 : 10;
+            intervalIds[index] = setInterval(() => {
+                updateStopwatch(document.getElementById(`stopwatch${id}`), currentFormat);
+            }, interval);
+        }
+    }
+
+    function pauseStopwatch(id) {
+        const index = id - 1;
+        clearInterval(intervalIds[index]);
+        intervalIds[index] = null;
+    }
+
+    function resetStopwatch(id) {
+        clearInterval(intervalIds[id - 1]);
+        intervalIds[id - 1] = null;
+        const initialTime = currentFormat === 'hms' ? '00:00:00' : '00:00:000';
+        document.getElementById(`stopwatch${id}`).textContent = initialTime;
+    }
+
+    function updateStopwatch(stopwatch, format) {
+        const timeParts = stopwatch.textContent.split(':').map(part => parseInt(part));
+        if (format === 'hms') {
+            let [hours, minutes, seconds] = timeParts;
+            seconds++;
+            if (seconds === 60) {
+                seconds = 0;
+                minutes++;
+                if (minutes === 60) {
+                    minutes = 0;
+                    hours++;
+                }
+            }
+            stopwatch.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        } else {
+            let [minutes, seconds, milliseconds] = timeParts;
+            milliseconds += 10;
+            if (milliseconds === 1000) {
+                milliseconds = 0;
+                seconds++;
+                if (seconds === 60) {
+                    seconds = 0;
+                    minutes++;
+                }
+            }
+            stopwatch.textContent = `${pad(minutes)}:${pad(seconds)}:${pad(milliseconds, 3)}`;
+        }
+    }
+
+    function pad(num, size = 2) {
+        return num.toString().padStart(size, '0');
+    }
+
+    function exportTimesToCSV() {
+        const rows = [['序號', '時間']];
+        intervalIds.forEach((_, index) => {
+            const stopwatch = document.getElementById(`stopwatch${index + 1}`).textContent;
+            rows.push([index + 1, stopwatch]);
+        });
+
+        let csvContent = "data:text/csv;charset=utf-8," 
+            + rows.map(e => e.join(",")).join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "stopwatch_times.csv");
+        document.body.appendChild(link);
+
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>課堂加分系統</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(to right, #ffecd2, #fcb69f);
+            color: #444;
+        }
+        h1 {
+            margin: 0;
+            padding: 20px 0;
+            font-size: 3em;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        #header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        #calendar {
+            width: 80%;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            margin-top: 20px;
+        }
+        #calendarHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            color: #fff;
+        }
+        #calendarHeader button {
+            background: #ff7e5f;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        #calendarHeader button:hover {
+            background: #feb47b;
+        }
+        #calendarMonth {
+            color: #FFA500; /* 橘色字 */
+        }
+        #calendarDays {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr); /* 7 days + 1 for weekly summary */
+            gap: 10px;
+            text-align: center;
+        }
+        .calendarDay {
+            padding: 15px;
+            border: 2px solid #ff7e5f;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.7);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+        .calendarDay:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: scale(1.05);
+        }
+        .calendarHeaderDay {
+            font-weight: bold;
+            font-size: 1.25em; /* Increase font size by 5px */
+            text-align: center;
+            color: #ff7e5f;
+        }
+        .today {
+            font-size: 1.5em;
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        .hasData {
+            background-color: rgba(173, 216, 230, 0.8);
+        }
+        #studentNamesInput {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        #studentNamesInput h3 {
+            margin-bottom: 20px;
+            color: #444;
+        }
+        #studentNamesInput textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 20px;
+            font-size: 1em;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #studentNamesInput button {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background: #ff7e5f;
+            color: #fff;
+            transition: background 0.3s ease;
+        }
+        #studentNamesInput button:hover {
+            background: #feb47b;
+        }
+        #studentNamesInputOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        #inputSection {
+            display: none;
+            width: 80%;
+            margin-top: 20px;
+            text-align: center; /* 讓標題及表格在畫面上左右置中對齊 */
+        }
+        textarea {
+            width: 300px;
+            height: 150px;
+            margin-bottom: 10px;
+            font-size: 1em;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #800080;
+            color: white;
+            margin: 5px;
+            transition: background 0.3s ease;
+        }
+        button:hover {
+            background-color: #9b59b6;
+        }
+        .resetButton {
+            background-color: red;
+        }
+        .resetButton:hover {
+            background-color: darkred;
+        }
+        .monthlySummaryButton {
+            background-color: green;
+        }
+        .monthlySummaryButton:hover {
+            background-color: darkgreen;
+        }
+        .exportButton, .importButton {
+            font-size: 12px;
+            background-color: #4682B4;
+        }
+        .exportButton:hover, .importButton:hover {
+            background-color: #5a9bd4;
+        }
+        .scoreTable {
+            margin-top: 20px;
+            border-collapse: collapse;
+            display: inline-block;
+            vertical-align: top;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            text-align: center; /* 讓標題及表格在畫面上左右置中對齊 */
+        }
+        .scoreTable, .scoreTable th, .scoreTable td {
+            border: 1px solid #ddd;
+        }
+        .scoreTable th, .scoreTable td {
+            padding: 10px;
+            text-align: center;
+        }
+        .scoreTable td button {
+            padding: 5px 10px;
+            font-size: 12px;
+            background-color: #ff7e5f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .scoreTable td button:hover {
+            background-color: #feb47b;
+        }
+        .highlight {
+            font-weight: bold;
+            color: red;
+        }
+        #chart {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 1000px;
+        }
+        #controlSection {
+            margin-top: 20px;
+            text-align: center;
+            width: 100%;
+        }
+        #footer {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 14px;
+        }
+        #footer a {
+            color: #fff;
+            text-decoration: none;
+        }
+        #footer a:hover {
+            text-decoration: underline;
+        }
+        .batchControl {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .batchControl input {
+            margin: 0 10px;
+            padding: 5px;
+            font-size: 16px;
+            width: 60px;
+            text-align: center;
+        }
+        #selectedDate {
+            margin-top: 10px;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .weekSummaryButton {
+            font-size: 13px;
+            background-color: #add8e6;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+        .weekSummaryButton:hover {
+            background-color: #87ceeb;
+        }
+        #weeklySummaryOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        #weeklySummaryContent {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        .bottom-buttons {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .themeButton {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+        .themeButton:hover {
+            transform: scale(1.1);
+        }
+        .defaultTheme {
+            background-color: #ff7e5f;
+            color: white;
+        }
+        .defaultTheme:hover {
+            background-color: #feb47b;
+        }
+        .techTheme1 {
+            background-color: #0f2027;
+            color: white;
+        }
+        .techTheme1:hover {
+            background-color: #203a43;
+        }
+        .techTheme2 {
+            background-color: #11998e;
+            color: white;
+        }
+        .techTheme2:hover {
+            background-color: #38ef7d;
+        }
+        .techTheme3 {
+            background-color: #2980b9;
+            color: white;
+        }
+        .techTheme3:hover {
+            background-color: #6dd5fa;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <button class="resetButton" onclick="confirmReset()">重置</button>
+        <h1>課堂加分系統</h1>
+        <button onclick="showStudentNamesInput()">輸入學生姓名</button>
+    </div>
+
+    <!-- Initial Screen with Calendar -->
+    <div id="calendar">
+        <div id="calendarHeader">
+            <button onclick="changeMonth(-1)">上一個月</button>
+            <h2 id="calendarMonth"></h2>
+            <button class="monthlySummaryButton" onclick="showMonthlySummary()">每月統計</button>
+            <button onclick="changeMonth(1)">下一個月</button>
+        </div>
+        <div id="calendarDays">
+            <div class="calendarHeaderDay">日</div>
+            <div class="calendarHeaderDay">一</div>
+            <div class="calendarHeaderDay">二</div>
+            <div class="calendarHeaderDay">三</div>
+            <div class="calendarHeaderDay">四</div>
+            <div class="calendarHeaderDay">五</div>
+            <div class="calendarHeaderDay">六</div>
+            <div class="calendarHeaderDay">統計</div>
+        </div>
+    </div>
+    
+    <!-- Student Names Input Overlay -->
+    <div id="studentNamesInputOverlay" onclick="hideStudentNamesInput()"></div>
+    <div id="studentNamesInput">
+        <h3>輸入學生姓名，每一行一個名字</h3>
+        <textarea id="studentNames" placeholder="每行輸入一個學生姓名"></textarea><br>
+        <button onclick="submitNames()">送出</button>
+    </div>
+    
+    <div id="inputSection">
+        <div id="controlSection" class="control-buttons">
+            <button onclick="showScoreSection()">加扣分</button>
+            <button onclick="showChartSection()">呈現直條圖</button>
+            <button onclick="goBack()">回上一頁</button>
+        </div>
+        <div id="selectedDate"></div>
+        <div id="scoreSection"></div>
+        <div id="chartSection">
+            <canvas id="chart"></canvas>
+        </div>
+    </div>
+
+    <div id="weeklySummaryOverlay" onclick="hideWeeklySummary()">
+        <div id="weeklySummaryContent" onclick="event.stopPropagation()">
+            <h2>統計</h2>
+            <div id="weeklyScoreSection"></div>
+            <canvas id="weeklyChart"></canvas>
+        </div>
+    </div>
+
+    <div class="bottom-buttons">
+        <button class="exportButton" onclick="exportData()">匯出</button>
+        <button class="importButton" onclick="importData()">匯入</button>
+    </div>
+
+    <div id="footer">
+        Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">阿剛老師</a>
+    </div>
+
+    <!-- Theme Buttons -->
+    <div id="themeButtons" style="margin-top: 100px; display: flex; justify-content: center;">
+        <button class="themeButton defaultTheme" onclick="setTheme('default')">橙色陽光</button>
+        <button class="themeButton techTheme1" onclick="setTheme('tech1')">深海之夢</button>
+        <button class="themeButton techTheme2" onclick="setTheme('tech2')">綠野仙蹤</button>
+        <button class="themeButton techTheme3" onclick="setTheme('tech3')">藍天白雲</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const backgroundColors = {
+            'default': 'linear-gradient(to right, #ffecd2, #fcb69f)',
+            'tech1': 'linear-gradient(to right, #0f2027, #203a43, #2c5364)',
+            'tech2': 'linear-gradient(to right, #11998e, #38ef7d)',
+            'tech3': 'linear-gradient(to right, #2980b9, #6dd5fa, #ffffff)'
+        };
+
+        let students = JSON.parse(localStorage.getItem('students')) || [];
+        let scores = JSON.parse(localStorage.getItem('scores')) || {};
+        let chart;
+        let weeklyChart;
+        let currentMonth = new Date();
+        let currentDay = null;
+        let currentTheme = localStorage.getItem('currentTheme') || 'default';
+
+        document.body.style.background = backgroundColors[currentTheme];
+        document.getElementById('calendar').style.display = 'block';
+        document.getElementById('header').style.display = 'flex';
+        renderCalendar();
+
+        function showStudentNamesInput() {
+            document.getElementById('studentNamesInput').style.display = 'block';
+            document.getElementById('studentNamesInputOverlay').style.display = 'block';
+        }
+
+        function hideStudentNamesInput() {
+            document.getElementById('studentNamesInput').style.display = 'none';
+            document.getElementById('studentNamesInputOverlay').style.display = 'none';
+        }
+
+        function submitNames() {
+            const names = document.getElementById('studentNames').value.trim().split('\n').map(name => name.trim());
+            names.forEach(name => {
+                if (!students.includes(name) && name !== '') {
+                    students.push(name);
+                }
+            });
+            localStorage.setItem('students', JSON.stringify(students));
+            hideStudentNamesInput();
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const calendarDays = document.getElementById('calendarDays');
+            calendarDays.innerHTML = `
+                <div class="calendarHeaderDay">日</div>
+                <div class="calendarHeaderDay">一</div>
+                <div class="calendarHeaderDay">二</div>
+                <div class="calendarHeaderDay">三</div>
+                <div class="calendarHeaderDay">四</div>
+                <div class="calendarHeaderDay">五</div>
+                <div class="calendarHeaderDay">六</div>
+                <div class="calendarHeaderDay">統計</div>
+            `;
+            const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+            const lastDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+            const firstDayIndex = firstDayOfMonth.getDay();
+            const lastDayIndex = lastDayOfMonth.getDay();
+            const prevLastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 0).getDate();
+            const lastDay = lastDayOfMonth.getDate();
+            const today = new Date();
+            let weekDayCount = 0;
+
+            document.getElementById('calendarMonth').textContent = currentMonth.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long' });
+
+            // Previous month dates
+            for (let i = firstDayIndex; i > 0; i--) {
+                const day = document.createElement('div');
+                day.classList.add('calendarDay');
+                day.classList.add('prevMonthDay');
+                day.textContent = prevLastDay - i + 1;
+                calendarDays.appendChild(day);
+                weekDayCount++;
+            }
+
+            // Current month dates
+            for (let i = 1; i <= lastDay; i++) {
+                const day = document.createElement('div');
+                day.classList.add('calendarDay');
+                if (today.getFullYear() === currentMonth.getFullYear() && 
+                    today.getMonth() === currentMonth.getMonth() && 
+                    today.getDate() === i) {
+                    day.classList.add('today');
+                }
+                const dateKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth() + 1}-${i}`;
+                if (scores[dateKey]) {
+                    day.classList.add('hasData');
+                }
+                day.textContent = i;
+                day.onclick = () => showDailyScoreSection(i);
+                calendarDays.appendChild(day);
+                weekDayCount++;
+                if (weekDayCount === 7) {
+                    const weekSummary = document.createElement('div');
+                    weekSummary.classList.add('calendarDay');
+                    weekSummary.innerHTML = `<button class="weekSummaryButton" onclick="showWeeklySummary(${i - 6}, ${i})">每週統計</button>`;
+                    calendarDays.appendChild(weekSummary);
+                    weekDayCount = 0;
+                }
+            }
+
+            // Next month dates
+            for (let i = 1; i < 7 - lastDayIndex; i++) {
+                const day = document.createElement('div');
+                day.classList.add('calendarDay');
+                day.classList.add('nextMonthDay');
+                day.textContent = i;
+                calendarDays.appendChild(day);
+                weekDayCount++;
+                if (weekDayCount === 7) {
+                    const weekSummary = document.createElement('div');
+                    weekSummary.classList.add('calendarDay');
+                    weekSummary.innerHTML = `<button class="weekSummaryButton" onclick="showWeeklySummary(${lastDay + i - 6}, ${lastDay + i})">每週統計</button>`;
+                    calendarDays.appendChild(weekSummary);
+                    weekDayCount = 0;
+                }
+            }
+        }
+
+        function changeMonth(months) {
+            currentMonth.setMonth(currentMonth.getMonth() + months);
+            renderCalendar();
+        }
+
+        function showDailyScoreSection(day) {
+            currentDay = day;
+            document.getElementById('selectedDate').textContent = `日期: ${currentMonth.getFullYear()}${(currentMonth.getMonth() + 1).toString().padStart(2, '0')}${day.toString().padStart(2, '0')}`;
+            document.getElementById('calendar').style.display = 'none';
+            document.getElementById('header').style.display = 'none';
+            document.getElementById('inputSection').style.display = 'block';
+            document.getElementById('controlSection').style.display = 'flex';
+            updateScoreTables();
+        }
+
+        function showScoreSection() {
+            document.getElementById('scoreSection').style.display = 'block';
+            document.getElementById('chartSection').style.display = 'none';
+        }
+
+        function showChartSection() {
+            document.getElementById('scoreSection').style.display = 'none';
+            document.getElementById('chartSection').style.display = 'block';
+            renderChart();
+        }
+
+        function goBack() {
+            document.getElementById('inputSection').style.display = 'none';
+            document.getElementById('calendar').style.display = 'block';
+            document.getElementById('header').style.display = 'flex';
+            location.reload();  // 模擬按下鍵盤F5，重新整理頁面
+        }
+
+        function updateScoreTables() {
+            const scoreSection = document.getElementById('scoreSection');
+            scoreSection.innerHTML = '';
+            let currentTable = createScoreTable();
+            scoreSection.appendChild(currentTable);
+            students.forEach((name, index) => {
+                if (index % 10 === 0 && index !== 0) {
+                    currentTable = createScoreTable();
+                    scoreSection.appendChild(currentTable);
+                }
+                addRowToTable(currentTable, name, index);
+            });
+            highlightTopScore();
+        }
+
+        function createScoreTable() {
+            const table = document.createElement('table');
+            table.className = 'scoreTable';
+            const thead = table.createTHead();
+            const row = thead.insertRow();
+            const thName = document.createElement('th');
+            const thAdd = document.createElement('th');
+            const thScore = document.createElement('th');
+            const thSubtract = document.createElement('th');
+            thName.textContent = '姓名';
+            thAdd.textContent = '加分';
+            thScore.textContent = '得分';
+            thSubtract.textContent = '扣分';
+            row.appendChild(thName);
+            row.appendChild(thAdd);
+            row.appendChild(thScore);
+            row.appendChild(thSubtract);
+            table.createTBody();
+            return table;
+        }
+
+        function addRowToTable(table, name, index) {
+            const tbody = table.getElementsByTagName('tbody')[0];
+            const row = tbody.insertRow();
+            const cellName = row.insertCell(0);
+            const cellAdd = row.insertCell(1);
+            const cellScore = row.insertCell(2);
+            const cellSubtract = row.insertCell(3);
+
+            cellName.textContent = name;
+            cellAdd.innerHTML = `<button onclick="changeScore('${name}-${index}', 1)">+</button>`;
+            const dateKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth() + 1}-${currentDay}`;
+            if (!scores[dateKey]) {
+                scores[dateKey] = {};
+            }
+            cellScore.textContent = scores[dateKey][`${name}-${index}`] || 0;
+            cellSubtract.innerHTML = `<button onclick="changeScore('${name}-${index}', -1)">-</button>`;
+        }
+
+        function changeScore(key, delta) {
+            const dateKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth() + 1}-${currentDay}`;
+            if (!scores[dateKey]) {
+                scores[dateKey] = {};
+            }
+            scores[dateKey][key] = (scores[dateKey][key] || 0) + delta;
+            localStorage.setItem('scores', JSON.stringify(scores));
+            updateScoreTables();
+        }
+
+        function highlightTopScore() {
+            const dateKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth() + 1}-${currentDay}`;
+            if (!scores[dateKey]) return;
+            const maxScore = Math.max(...Object.values(scores[dateKey]));
+            const cells = document.querySelectorAll('.scoreTable td:nth-child(3)');
+            cells.forEach(cell => {
+                cell.classList.remove('highlight');
+                if (parseInt(cell.textContent) === maxScore) {
+                    cell.classList.add('highlight');
+                }
+            });
+        }
+
+        function renderChart() {
+            const dateKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth() + 1}-${currentDay}`;
+            const ctx = document.getElementById('chart').getContext('2d');
+            if (chart) {
+                chart.destroy();
+            }
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: students,
+                    datasets: [{
+                        label: '得分',
+                        data: students.map((name, index) => scores[dateKey][`${name}-${index}`] || 0),
+                        backgroundColor: students.map((name, index) => scores[dateKey][`${name}-${index}`] === Math.max(...Object.values(scores[dateKey])) ? 'darkblue' : 'rgba(54, 162, 235, 0.2)'),
+                        borderColor: students.map((name, index) => scores[dateKey][`${name}-${index}`] === Math.max(...Object.values(scores[dateKey])) ? 'darkblue' : 'rgba(54, 162, 235, 1)'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: students.length <= 6 ? 0 : 90,
+                                minRotation: 0,
+                                font: function(context) {
+                                    const width = context.chart.width;
+                                    const size = students.length <= 6 ? 14 : Math.round(width / students.length / 1.5);
+                                    return {
+                                        size: size > 8 ? size : 8,
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function confirmReset() {
+            if (confirm("確定要重置所有資料嗎？")) {
+                localStorage.removeItem('students');
+                localStorage.removeItem('scores');
+                students = [];
+                scores = {};
+                document.getElementById('calendar').style.display = 'block';
+                document.getElementById('inputSection').style.display = 'none';
+                document.getElementById('studentNamesInput').style.display = 'none';
+                document.getElementById('header').style.display = 'flex';
+                renderCalendar();
+            }
+        }
+
+        function showWeeklySummary(startDay, endDay) {
+            const summaryData = {};
+            for (let i = startDay; i <= endDay; i++) {
+                const dateKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth() + 1}-${i}`;
+                if (scores[dateKey]) {
+                    Object.keys(scores[dateKey]).forEach(key => {
+                        summaryData[key] = (summaryData[key] || 0) + scores[dateKey][key];
+                    });
+                }
+            }
+
+            document.getElementById('weeklySummaryOverlay').style.display = 'flex';
+
+            const weeklyScoreSection = document.getElementById('weeklyScoreSection');
+            weeklyScoreSection.innerHTML = '';
+            let currentTable = createWeeklySummaryTable();
+            weeklyScoreSection.appendChild(currentTable);
+            const maxScore = Math.max(...Object.values(summaryData));
+            students.forEach((name, index) => {
+                if (index % 10 === 0 && index !== 0) {
+                    currentTable = createWeeklySummaryTable();
+                    weeklyScoreSection.appendChild(currentTable);
+                }
+                addSummaryRowToTable(currentTable, name, index, summaryData, maxScore);
+            });
+            renderSummaryChart(summaryData);
+        }
+
+        function showMonthlySummary() {
+            const summaryData = {};
+            const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+            for (let i = 1; i <= lastDay; i++) {
+                const dateKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth() + 1}-${i}`;
+                if (scores[dateKey]) {
+                    Object.keys(scores[dateKey]).forEach(key => {
+                        summaryData[key] = (summaryData[key] || 0) + scores[dateKey][key];
+                    });
+                }
+            }
+
+            document.getElementById('weeklySummaryOverlay').style.display = 'flex';
+
+            const weeklyScoreSection = document.getElementById('weeklyScoreSection');
+            weeklyScoreSection.innerHTML = '';
+            let currentTable = createWeeklySummaryTable();
+            weeklyScoreSection.appendChild(currentTable);
+            const maxScore = Math.max(...Object.values(summaryData));
+            students.forEach((name, index) => {
+                if (index % 10 === 0 && index !== 0) {
+                    currentTable = createWeeklySummaryTable();
+                    weeklyScoreSection.appendChild(currentTable);
+                }
+                addSummaryRowToTable(currentTable, name, index, summaryData, maxScore);
+            });
+            renderSummaryChart(summaryData);
+        }
+
+        function createWeeklySummaryTable() {
+            const table = document.createElement('table');
+            table.className = 'scoreTable';
+            const thead = table.createTHead();
+            const row = thead.insertRow();
+            const thName = document.createElement('th');
+            const thScore = document.createElement('th');
+            thName.textContent = '姓名';
+            thScore.textContent = '得分';
+            row.appendChild(thName);
+            row.appendChild(thScore);
+            table.createTBody();
+            return table;
+        }
+
+        function addSummaryRowToTable(table, name, index, summaryData, maxScore) {
+            const tbody = table.getElementsByTagName('tbody')[0];
+            const row = tbody.insertRow();
+            const cellName = row.insertCell(0);
+            const cellScore = row.insertCell(1);
+
+            cellName.textContent = name;
+            cellScore.textContent = summaryData[`${name}-${index}`] || 0;
+
+            if (summaryData[`${name}-${index}`] === maxScore) {
+                cellName.style.fontWeight = 'bold';
+                cellName.style.color = 'red';
+            }
+        }
+
+        function renderSummaryChart(summaryData) {
+            const ctx = document.getElementById('weeklyChart').getContext('2d');
+            if (weeklyChart) {
+                weeklyChart.destroy();
+            }
+            weeklyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: students,
+                    datasets: [{
+                        label: '得分',
+                        data: students.map((name, index) => summaryData[`${name}-${index}`] || 0),
+                        backgroundColor: students.map((name, index) => summaryData[`${name}-${index}`] === Math.max(...Object.values(summaryData)) ? 'darkblue' : 'rgba(54, 162, 235, 0.2)'),
+                        borderColor: students.map((name, index) => summaryData[`${name}-${index}`] === Math.max(...Object.values(summaryData)) ? 'darkblue' : 'rgba(54, 162, 235, 1)'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: students.length <= 6 ? 0 : 90,
+                                minRotation: 0,
+                                font: function(context) {
+                                    const width = context.chart.width;
+                                    const size = students.length <= 6 ? 14 : Math.round(width / students.length / 1.5);
+                                    return {
+                                        size: size > 8 ? size : 8,
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function setTheme(theme) {
+            currentTheme = theme;
+            document.body.style.background = backgroundColors[theme];
+            localStorage.setItem('currentTheme', theme);
+        }
+
+        function exportData() {
+            const data = {
+                students: students,
+                scores: scores
+            };
+            const json = JSON.stringify(data);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'class_data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.onchange = function(event) {
+                const file = event.target.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = JSON.parse(e.target.result);
+                    students = data.students || [];
+                    scores = data.scores || {};
+                    localStorage.setItem('students', JSON.stringify(students));
+                    localStorage.setItem('scores', JSON.stringify(scores));
+                    renderCalendar();
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        function hideWeeklySummary() {
+            document.getElementById('weeklySummaryOverlay').style.display = 'none';
+        }
+
+        window.onbeforeunload = function() {
+            localStorage.setItem('students', JSON.stringify(students));
+            localStorage.setItem('scores', JSON.stringify(scores));
+        };
+
+        window.onload = function() {
+            if (students.length > 0) {
+                renderCalendar();
+                renderChart();
+            }
+        };
+    </script>
+</body>
+</html>

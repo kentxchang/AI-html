@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRT 字幕去除時間碼</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #333;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align items at the top */
+            width: 100%;
+        }
+        .input-section, .output-section {
+            width: 45%;
+            margin: 10px;
+        }
+        textarea {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            background-color: #fff;
+            height: 400px;
+            box-sizing: border-box; /* Ensure padding and border are included in the element's total width and height */
+        }
+        button {
+            margin: 10px 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button.process {
+            background-color: #4CAF50;
+            color: white;
+        }
+        button.copy {
+            background-color: #008CBA;
+            color: white;
+        }
+        button.download {
+            background-color: #f39c12;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>SRT 字幕去除時間碼</h1>
+    <div class="container">
+        <div class="input-section">
+            <textarea id="srt-input" placeholder="請在此貼上SRT字幕檔文字"></textarea><br>
+            <button class="process" onclick="processSRT()">去除時間碼</button>
+        </div>
+        <div class="output-section">
+            <textarea id="output" readonly></textarea><br>
+            <button class="copy" onclick="copyToClipboard()">複製到剪貼簿</button>
+            <button class="download" onclick="downloadText()">下載純文字內容</button>
+        </div>
+    </div>
+
+    <script>
+        function processSRT() {
+            const input = document.getElementById('srt-input').value;
+            const lines = input.split('\n');
+            let result = [];
+            let isTextLine = false;
+            let currentText = '';
+
+            lines.forEach(line => {
+                if (line.match(/^\d+$/)) {
+                    // This is a number line (index)
+                    isTextLine = false;
+                } else if (line.match(/^\d{2}:\d{2}:\d{2},\d{3} --> \d{2}:\d{2}:\d{2},\d{3}$/)) {
+                    // This is a timecode line
+                    isTextLine = false;
+                } else if (line.trim() === '') {
+                    // This is an empty line
+                    if (currentText.trim() !== '') {
+                        result.push(currentText.trim());
+                        currentText = '';
+                    }
+                    isTextLine = false;
+                } else {
+                    // This is a text line
+                    if (currentText.trim() !== '') {
+                        currentText += ' ';
+                    }
+                    currentText += line;
+                    isTextLine = true;
+                }
+            });
+
+            if (currentText.trim() !== '') {
+                result.push(currentText.trim());
+            }
+
+            document.getElementById('output').value = result.join(', ');
+        }
+
+        function copyToClipboard() {
+            const output = document.getElementById('output');
+            output.select();
+            output.setSelectionRange(0, 99999); // For mobile devices
+            document.execCommand('copy');
+            alert('內容已複製到剪貼簿');
+        }
+
+        function downloadText() {
+            const output = document.getElementById('output').value;
+            const blob = new Blob([output], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'output.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>碼錶</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+            transition: background 0.3s;
+            position: relative;
+        }
+        .stopwatch {
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            margin-top: 5%;
+        }
+        .time {
+            font-size: calc(4vw + 4vh);
+            margin-bottom: 20px;
+            color: #333;
+            word-wrap: break-word;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 80px;
+            height: 80px;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        button:active {
+            transform: scale(0.9);
+        }
+        #startStopBtn {
+            background-color: #4caf50;
+            color: white;
+        }
+        #lapResetBtn {
+            background-color: #f44336;
+            color: white;
+        }
+        #exportBtn {
+            background-color: #2196f3;
+            color: white;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .lap-container {
+            overflow-y: auto;
+            max-height: 200px;
+            border-top: 2px solid #ddd;
+            margin-top: 10px;
+            padding-top: 10px;
+        }
+        .lap-times {
+            list-style-type: none;
+            padding: 0;
+            text-align: left;
+            margin: 0;
+        }
+        .lap-times li {
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+            font-size: 18px;
+            color: #555;
+        }
+        .color-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        .color-button {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background-color 0.3s, transform 0.3s;
+            flex-grow: 0;
+            min-width: 80px;
+        }
+        .color-button:active {
+            transform: scale(0.95);
+        }
+        .footer {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            font-size: 12px;
+            color: white;
+        }
+        .footer a {
+            color: white;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .time {
+                font-size: calc(8vw + 8vh);
+            }
+            button {
+                width: 60px;
+                height: 60px;
+                font-size: 16px;
+            }
+            .color-button {
+                padding: 6px 10px;
+                font-size: 12px;
+                min-width: 70px;
+            }
+        }
+        .starry-night {
+            background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
+            position: relative;
+            overflow: hidden;
+        }
+        .starry-night::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
+                radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px);
+            background-size: 550px 550px, 350px 350px, 250px 250px;
+            animation: twinkle 5s infinite;
+            opacity: 0.3;
+        }
+        @keyframes twinkle {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-550px); }
+        }
+        .lavender-field {
+            background: linear-gradient(to right, #b24592, #f15f79);
+        }
+        .sunset-beach {
+            background: linear-gradient(to right, #ff9966, #ff5e62);
+        }
+    </style>
+</head>
+<body>
+    <div class="stopwatch">
+        <div class="time" id="time">00:00:00</div>
+        <div class="buttons">
+            <button id="startStopBtn">開始</button>
+            <button id="exportBtn">匯出</button>
+            <button id="lapResetBtn">圈數</button>
+        </div>
+        <div class="lap-container">
+            <ul class="lap-times" id="lapTimes"></ul>
+        </div>
+        <div class="color-buttons">
+            <button class="color-button" id="color1Btn">星空夜晚</button>
+            <button class="color-button" id="color2Btn">薰衣草田</button>
+            <button class="color-button" id="color3Btn">日落海灘</button>
+        </div>
+    </div>
+    <div class="footer">
+        Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">阿剛老師</a>
+    </div>
+
+    <script>
+        let startTime = 0;
+        let elapsedTime = 0;
+        let timerInterval;
+        let isRunning = false;
+        let lapCounter = 0;
+
+        const timeElement = document.getElementById('time');
+        const startStopBtn = document.getElementById('startStopBtn');
+        const lapResetBtn = document.getElementById('lapResetBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const lapTimesElement = document.getElementById('lapTimes');
+        const color1Btn = document.getElementById('color1Btn');
+        const color2Btn = document.getElementById('color2Btn');
+        const color3Btn = document.getElementById('color3Btn');
+
+        function updateTime() {
+            const currentTime = Date.now();
+            const timeElapsed = new Date(elapsedTime + (currentTime - startTime));
+            const minutes = String(timeElapsed.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(timeElapsed.getUTCSeconds()).padStart(2, '0');
+            const milliseconds = String(Math.floor(timeElapsed.getUTCMilliseconds() / 10)).padStart(2, '0');
+
+            timeElement.textContent = `${minutes}:${seconds}.${milliseconds}`;
+        }
+
+        startStopBtn.addEventListener('click', () => {
+            if (isRunning) {
+                clearInterval(timerInterval);
+                elapsedTime += Date.now() - startTime;
+                startStopBtn.textContent = '開始';
+                lapResetBtn.textContent = '重置';
+                timeElement.textContent = timeElement.textContent.slice(0, 8);
+            } else {
+                startTime = Date.now();
+                timerInterval = setInterval(updateTime, 10);
+                startStopBtn.textContent = '停止';
+                lapResetBtn.textContent = '圈數';
+                updateTime();
+            }
+            isRunning = !isRunning;
+        });
+
+        lapResetBtn.addEventListener('click', () => {
+            if (isRunning) {
+                lapCounter++;
+                const lapTime = timeElement.textContent;
+                const lapElement = document.createElement('li');
+                lapElement.textContent = `圈 ${lapCounter}: ${lapTime}`;
+                lapTimesElement.appendChild(lapElement);
+            } else {
+                clearInterval(timerInterval);
+                elapsedTime = 0;
+                lapCounter = 0;
+                timeElement.textContent = '00:00:00';
+                lapTimesElement.innerHTML = '';
+                startStopBtn.textContent = '開始';
+                lapResetBtn.textContent = '圈數';
+            }
+        });
+
+        exportBtn.addEventListener('click', () => {
+            const lapTimes = document.querySelectorAll('.lap-times li');
+            const rows = [['圈數', '時間']];
+            lapTimes.forEach(lap => {
+                const lapText = lap.textContent.split(': ');
+                rows.push([lapText[0], lapText[1]]);
+            });
+
+            let csvContent = "data:text/csv;charset=utf-8," 
+                + rows.map(e => e.join(",")).join("\n");
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            const date = new Date();
+            const dateString = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `碼錶${dateString}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        function setTheme(theme) {
+            document.body.className = theme;
+            let startStopColor, lapResetColor, exportColor, colorBtnColors;
+            
+            switch(theme) {
+                case 'starry-night':
+                    startStopColor = '#4db6ac';
+                    lapResetColor = '#ff7043';
+                    exportColor = '#ffd54f';
+                    colorBtnColors = ['#203a43', '#b24592', '#ff9966'];
+                    break;
+                case 'lavender-field':
+                    startStopColor = '#7e57c2';
+                    lapResetColor = '#66bb6a';
+                    exportColor = '#ffca28';
+                    colorBtnColors = ['#0f2027', '#f15f79', '#ff9966'];
+                    break;
+                case 'sunset-beach':
+                    startStopColor = '#ff7043';
+                    lapResetColor = '#42a5f5';
+                    exportColor = '#ffd54f';
+                    colorBtnColors = ['#0f2027', '#b24592', '#ff5e62'];
+                    break;
+            }
+
+            startStopBtn.style.backgroundColor = startStopColor;
+            lapResetBtn.style.backgroundColor = lapResetColor;
+            exportBtn.style.backgroundColor = exportColor;
+
+            color1Btn.style.backgroundColor = colorBtnColors[0];
+            color2Btn.style.backgroundColor = colorBtnColors[1];
+            color3Btn.style.backgroundColor = colorBtnColors[2];
+
+            [color1Btn, color2Btn, color3Btn].forEach((btn, index) => {
+                btn.style.color = 'white';
+                btn.style.border = theme === btn.textContent ? '2px solid white' : 'none';
+            });
+        }
+
+        color1Btn.addEventListener('click', () => setTheme('starry-night'));
+        color2Btn.addEventListener('click', () => setTheme('lavender-field'));
+        color3Btn.addEventListener('click', () => setTheme('sunset-beach'));
+
+        // 初始化主題
+        setTheme('starry-night');
+    </script>
+</body>
+</html>

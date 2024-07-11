@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>網址縮短及QR碼生成器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+            transition: background-color 0.5s ease;
+        }
+        #container {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        input[type="text"] {
+            padding: 10px;
+            margin-bottom: 20px;
+            width: 300px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+        }
+        #qr-code {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        #short-url {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #copy-button {
+            margin-left: 10px;
+            padding: 8px 16px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        #footer {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h2>網址縮短及QR碼生成器</h2>
+        <input type="text" id="urlInput" placeholder="https://example.com">
+        <button onclick="generateShortUrl()">送出</button>
+        <div id="qr-code"></div>
+        <div id="short-url"></div>
+    </div>
+
+    <div id="footer">
+        Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">kentxchang</a>
+    </div>
+
+    <script>
+        function generateShortUrl() {
+            var longUrl = document.getElementById('urlInput').value;
+            // 清空先前的內容
+            document.getElementById('qr-code').innerHTML = '';
+            document.getElementById('short-url').innerHTML = '';
+
+            // 使用 TinyURL 來縮短 URL
+            fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(longUrl))
+            .then(response => response.text())
+            .then(shortUrl => {
+                // 生成 QR 碼
+                var qrCode = new QRCode(document.getElementById('qr-code'), {
+                    text: shortUrl,
+                    width: 200,
+                    height: 200
+                });
+
+                // 顯示短網址
+                var shortUrlContainer = document.getElementById('short-url');
+                shortUrlContainer.innerHTML = '<p>短網址：</p><a href="' + shortUrl + '" target="_blank">' + shortUrl + '</a>';
+                
+                // 加入複製按鈕
+                var copyButton = document.createElement('button');
+                copyButton.innerText = '複製短網址';
+                copyButton.id = 'copy-button';
+                copyButton.onclick = function() {
+                    copyToClipboard(shortUrl);
+                };
+                shortUrlContainer.appendChild(copyButton);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function copyToClipboard(text) {
+            var input = document.createElement('input');
+            input.value = text;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            alert('短網址已複製到剪貼簿！');
+        }
+
+        // 隨機變更背景色
+        window.onload = function() {
+            var colors = ['#FFDDDD', '#FFF7B7', '#D5FFD5', '#EAD1FF'];
+            var randomColor = colors[Math.floor(Math.random() * colors.length)];
+            document.body.style.backgroundColor = randomColor;
+        };
+    </script>
+
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
+</body>
+</html>

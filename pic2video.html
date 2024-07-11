@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image and Audio to Video</title>
+</head>
+<body>
+    <h1>Image and Audio to Video Converter</h1>
+    <input type="file" id="imageUpload" accept="image/*" multiple>
+    <input type="file" id="audioUpload" accept="audio/*" multiple>
+    <button id="generateVideo">Generate Video</button>
+    <video id="outputVideo" controls style="display:none"></video>
+    <a id="downloadLink" style="display:none">Download Video</a>
+
+    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.9.8/dist/ffmpeg.min.js"></script>
+    <script>
+        document.getElementById('generateVideo').addEventListener('click', async () => {
+            const images = document.getElementById('imageUpload').files;
+            const audios = document.getElementById('audioUpload').files;
+
+            if (images.length !== audios.length) {
+                alert('Please upload an equal number of images and audio files.');
+                return;
+            }
+
+            const { createFFmpeg, fetchFile } = FFmpeg;
+            const ffmpeg = createFFmpeg({ log: true });
+            await ffmpeg.load();
+
+            const videoParts = [];
+
+            for (let i = 0; i < images.length; i++) {
+                const image = images[i];
+                const audio = audios[i];
+
+                const imageName = `image${i}.jpg`;
+                const audioName = `audio${i}.mp3`;
+                const videoName = `video${i}.mp4`;
+
+                ffmpeg.FS('writeFile', imageName, await fetchFile(image));
+                ffmpeg.FS('writeFile', audioName, await fetchFile(audio));
+
+                await ffmpeg.run('-loop', '1', '-i', imageName, '-i', audioName, '-c:v', 'libx264', '-t', '5', '-pix_fmt', 'yuv420p', videoName);
+
+                const data = ffmpeg.FS('readFile', videoName);
+                videoParts.push(new Blob([data.buffer], { type: 'video/mp4' }));
+            }
+
+            const finalVideo = new Blob(videoParts, { type: 'video/mp4' });
+            const videoURL = URL.createObjectURL(finalVideo);
+
+            const outputVideo = document.getElementById('outputVideo');
+            outputVideo.src = videoURL;
+            outputVideo.style.display = 'block';
+
+            const downloadLink = document.getElementById('downloadLink');
+            downloadLink.href = videoURL;
+            downloadLink.download = 'final_video.mp4';
+            downloadLink.style.display = 'block';
+            downloadLink.innerText = 'Download Video';
+        });
+
+    </script>
+</body>
+</html>

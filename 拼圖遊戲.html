@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一起來拼圖</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            border: 1px solid black;
+            margin-top: 20px;
+        }
+        .controls {
+            margin: 20px;
+        }
+        .dragging {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <h1>一起來拼圖</h1>
+    <div class="controls">
+        <label for="imageUpload">上傳圖片:</label>
+        <input type="file" id="imageUpload" accept="image/*">
+        <label for="rows">行數:</label>
+        <input type="number" id="rows" min="2" max="10" value="4">
+        <label for="cols">列數:</label>
+        <input type="number" id="cols" min="2" max="10" value="4">
+        <button id="startBtn">開始玩</button>
+    </div>
+    <div id="timer">時間: 0 秒</div>
+    <canvas id="puzzleCanvas"></canvas>
+
+    <script>
+        let img = new Image();
+        let canvas = document.getElementById('puzzleCanvas');
+        let ctx = canvas.getContext('2d');
+        let rows, cols, pieces = [], pieceWidth, pieceHeight;
+        let startTime, timerInterval, draggingPiece = null;
+
+        const maxCanvasWidth = window.innerWidth;
+        const maxCanvasHeight = window.innerHeight;
+
+        canvas.width = maxCanvasWidth;
+        canvas.height = maxCanvasHeight;
+
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('imageUpload').addEventListener('change', handleImageUpload);
+
+        function handleImageUpload(event) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        img.onload = function() {
+            const aspectRatio = img.width / img.height;
+            if (aspectRatio > 1) {
+                img.width = maxCanvasWidth / 2;
+                img.height = img.width / aspectRatio;
+            } else {
+                img.height = maxCanvasHeight / 2;
+                img.width = img.height * aspectRatio;
+            }
+            ctx.drawImage(img, 0, 0, img.width, img.height);
+        };
+
+        function startGame() {
+            rows = parseInt(document.getElementById('rows').value);
+            cols = parseInt(document.getElementById('cols').value);
+            pieceWidth = img.width / cols;
+            pieceHeight = img.height / rows;
+            pieces = [];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            startTime = new Date();
+            clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+            createPieces();
+            shufflePieces();
+            drawPieces();
+        }
+
+        function createPieces() {
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    pieces.push({
+                        correctX: x,
+                        correctY: y,
+                        x: x * pieceWidth,
+                        y: y * pieceHeight,
+                        width: pieceWidth,
+                        height: pieceHeight
+                    });
+                }
+            }
+        }
+
+        function shufflePieces() {
+            pieces = pieces.map(piece => {
+                return {
+                    ...piece,
+                    x: Math.random() * (canvas.width - piece.width),
+                    y: Math.random() * (canvas.height - piece.height)
+                };
+            });
+        }
+
+        function drawPieces() {
+            pieces.forEach(piece => {
+                ctx.drawImage(
+                    img,
+                    piece.correctX * piece.width,
+                    piece.correctY * piece.height,
+                    piece.width,
+                    piece.height,
+                    piece.x,
+                    piece.y,
+                    piece.width,
+                    piece.height
+                );
+            });
+        }
+
+        function updateTimer() {
+            const currentTime = new Date();
+            const timeElapsed = Math.floor((currentTime - startTime) / 1000);
+            document.getElementById('timer').textContent = `時間: ${timeElapsed} 秒`;
+        }
+
+        canvas.addEventListener('mousedown', onCanvasClick);
+
+        function onCanvasClick(event) {
+            const mouseX = event.offsetX;
+            const mouseY = event.offsetY;
+            draggingPiece = pieces.find(piece => mouseX > piece.x && mouseX < piece.x + pieceWidth && mouseY > piece.y && mouseY < piece.y + pieceHeight);
+            if (draggingPiece) {
+                canvas.classList.add('dragging');
+                canvas.addEventListener('mousemove', onCanvasMove);
+                canvas.addEventListener('mouseup', onCanvasRelease);
+            }
+        }
+
+        function onCanvasMove(event) {
+            if (draggingPiece) {
+                draggingPiece.x = event.offsetX - pieceWidth / 2;
+                draggingPiece.y = event.offsetY - pieceHeight / 2;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawPieces();
+            }
+        }
+
+        function onCanvasRelease(event) {
+            canvas.classList.remove('dragging');
+            canvas.removeEventListener('mousemove', onCanvasMove);
+            canvas.removeEventListener('mouseup', onCanvasRelease);
+            draggingPiece = null;
+            checkIfPuzzleSolved();
+        }
+
+        function checkIfPuzzleSolved() {
+            const isSolved = pieces.every(piece => Math.abs(piece.x - piece.correctX * piece.width) < 10 && Math.abs(piece.y - piece.correctY * piece.height) < 10);
+            if (isSolved) {
+                clearInterval(timerInterval);
+                const timeElapsed = Math.floor((new Date() - startTime) / 1000);
+                alert(`恭喜！你完成了拼圖！總共使用了 ${timeElapsed} 秒。`);
+            }
+        }
+    </script>
+</body>
+</html>

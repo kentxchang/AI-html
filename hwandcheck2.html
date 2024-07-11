@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>每日作業表</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            position: relative;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            background-color: #E6E6FA;
+            color: #4A4A4A;
+            box-sizing: border-box;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        h1 {
+            text-align: center;
+            color: #4A4A4A;
+            margin-top: 20px;
+            font-size: 2em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        .button-center {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        table {
+            width: 90%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 15px;
+            text-align: center;
+            vertical-align: middle;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        th {
+            background-color: #9370DB;
+            color: #fff;
+            font-weight: bold;
+        }
+        td {
+            background-color: #f9f9f9;
+        }
+        .button-section, .button-section-left {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .input-section {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1001;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        .input-label {
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #4A4A4A;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        .input-field {
+            margin-bottom: 10px;
+            padding: 10px;
+            width: 100%;
+            max-width: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        .submit-button, .table-button, .export-button, .import-button, .reset-button {
+            display: block;
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #9370DB;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        .submit-button:hover, .table-button:hover, .export-button:hover, .import-button:hover, .reset-button:hover {
+            background-color: #7B68EE;
+        }
+        .export-button, .import-button {
+            background-color: #28A745;
+        }
+        .export-button:hover, .import-button:hover {
+            background-color: #218838;
+        }
+        .reset-button {
+            background-color: #DC3545;
+        }
+        .reset-button:hover {
+            background-color: #C82333;
+        }
+        .back-button, .status-toggle-button, .export-image-button {
+            padding: 10px 0;
+            font-size: 16px;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-shadow: 2px 2px 4px #aaa;
+            width: calc(33.33% - 20px);
+            margin: 0 10px;
+            display: inline-block;
+            text-align: center;
+        }
+        .back-button {
+            background-color: #007BFF;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+        .status-toggle-button {
+            background-color: #007BFF;
+        }
+        .status-toggle-button:hover {
+            background-color: #0056b3;
+        }
+        .export-image-button {
+            background-color: #DC3545;
+        }
+        .export-image-button:hover {
+            background-color: #C82333;
+        }
+        #status-container {
+            background-color: #fff;
+            margin: 20px auto;
+            padding: 20px;
+            width: 90%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            display: none;
+            text-align: center;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        .status-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+        .status-table th, .status-table td {
+            border: none;
+            padding: 10px;
+            text-align: center;
+            text-shadow: 2px 2px 4px #aaa;
+            color: white;
+        }
+        .status-table th:nth-child(2), .status-table td:nth-child(2) {
+            width: 33.33%;
+        }
+        .status-table th:nth-child(3), .status-table td:nth-child(3) {
+            width: 33.33%;
+        }
+        .status-table th:nth-child(4), .status-table td:nth-child(4) {
+            width: 33.33%;
+        }
+        .status-table td {
+            color: initial;
+        }
+        @media print {
+            @page {
+                size: landscape;
+            }
+            body {
+                -webkit-print-color-adjust: exact;
+            }
+        }
+        #tables-container table, #tables-container th, #tables-container td {
+            width: 120px;
+            height: 30px;
+            border: 1px solid #ddd;
+        }
+        #tables-container th, #tables-container td {
+            padding: 0;
+            text-align: center;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        .status-button {
+            width: 120px;
+            height: 30px;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .assignment-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1001;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        .assignment-overlay ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .assignment-overlay li {
+            font-size: 100px;
+            font-weight: bold;
+            text-align: left;
+            margin: 10px 0;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        .date-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 10px;
+            color: blue;
+        }
+        .copyright {
+            position: absolute;
+            bottom: 20px;
+            left: 300px;
+            font-size: 14px;
+            color: #4A4A4A;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        .copyright a {
+            color: #4A4A4A;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .copyright a:hover {
+            text-decoration: underline;
+        }
+        .student-button {
+            background-color: #007BFF;
+            color: #fff;
+            margin-right: 10px;
+        }
+        .student-button:hover {
+            background-color: #0056b3;
+        }
+        .status-container-left,
+        .status-container-right {
+            width: 45%;
+            display: inline-block;
+            vertical-align: top;
+        }
+        .instructions {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 16px;
+            padding: 10px 20px;
+            background-color: #9370DB;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        .instructions:hover {
+            background-color: #7B68EE;
+        }
+        .reset-confirm-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+        .reset-confirm-box {
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1001;
+            text-shadow: 2px 2px 4px #aaa;
+            text-align: center;
+        }
+        .confirm-button, .cancel-button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        .confirm-button {
+            background-color: #DC3545;
+        }
+        .confirm-button:hover {
+            background-color: #C82333;
+        }
+        .cancel-button {
+            background-color: #6c757d;
+        }
+        .cancel-button:hover {
+            background-color: #5a6268;
+        }
+        .calendar-table td {
+            width: 120px;
+            height: 80px;
+            border: 1px solid #ddd;
+            vertical-align: top;
+            position: relative;
+            padding-top: 5px;
+        }
+        .calendar-button {
+            width: 100px;
+            height: 30px;
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+            text-align: center;
+            line-height: 25px;
+            color: white;
+            background-color: #9370DB;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .calendar-button:hover {
+            background-color: #7B68EE;
+        }
+        .month-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .month-navigation button {
+            padding: 10px;
+            font-size: 16px;
+            background-color: #9370DB;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        .month-navigation button:hover {
+            background-color: #7B68EE;
+        }
+        .calendar-spacer {
+            height: 200px;
+        }
+        .dropdown {
+            position: absolute;
+            top: 20px;
+            right: 150px;
+        }
+        .dropdown select {
+            padding: 10px;
+            font-size: 16px;
+            background-color: #9370DB;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-shadow: 2px 2px 4px #aaa;
+        }
+        .dropdown select:hover {
+            background-color: #7B68EE;
+        }
+        .hidden-on-checklist {
+            display: none;
+        }
+        .empty-space {
+            height: 200px;
+        }
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="toggle-on-checklist">每日作業表</h1>
+    <div class="dropdown toggle-on-checklist">
+        <select id="view-toggle" onchange="toggleView()">
+            <option value="list">條列式</option>
+            <option value="calendar">日曆式</option>
+        </select>
+    </div>
+    <button class="instructions toggle-on-checklist" onclick="showInstructions()">使用說明</button>
+    <div class="button-center toggle-on-checklist">
+        <button id="enter-homework-button" class="table-button" onclick="showHomeworkInput()">輸入今日作業</button>
+    </div>
+    <div id="main-content">
+        <table id="assignments-table">
+            <thead>
+                <tr>
+                    <th>日期</th>
+                    <th>星期</th>
+                    <th>今日作業</th>
+                    <th>每日作業檢核表</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <div class="empty-space"></div>
+    </div>
+
+    <div id="overlay" class="overlay" onclick="hideOverlay()"></div>
+    
+    <div id="reset-confirm-overlay" class="reset-confirm-overlay" onclick="hideResetOverlay()">
+        <div class="reset-confirm-box">
+            <p>確定要重置所有數據嗎？此操作不可逆。</p>
+            <button class="confirm-button" onclick="confirmReset()">確認</button>
+            <button class="cancel-button" onclick="hideResetOverlay()">取消</button>
+        </div>
+    </div>
+
+    <div id="homework-input-section" class="input-section">
+        <label class="input-label">選擇日期</label>
+        <input type="date" id="homework-date" class="input-field">
+        <label class="input-label">輸入今日作業</label>
+        <textarea id="homework-input" class="input-field" rows="5"></textarea>
+        <button class="submit-button" onclick="submitHomework()">送出</button>
+    </div>
+
+    <div id="student-input-section" class="input-section">
+        <label class="input-label">輸入學生姓名</label>
+        <textarea id="student-input" class="input-field" rows="5" placeholder="輸入學生姓名，每個姓名一行"></textarea>
+        <button class="submit-button" onclick="submitStudents()">送出</button>
+    </div>
+
+    <div id="single-student-input-section" class="input-section">
+        <label class="input-label">新增一個學生</label>
+        <input id="single-student-input" class="input-field" type="text">
+        <button class="submit-button" onclick="submitSingleStudent()">送出</button>
+    </div>
+
+    <div id="instructions-section" class="input-section">
+        <label class="input-label">使用說明</label>
+        <div class="instructions-content">
+            <p>1. 點擊“輸入今日作業”按鈕，選擇日期並輸入今日的作業。選擇日期後，在文本框內輸入作業名稱，每行一個作業名稱。完成後，點擊“送出”按鈕保存。</p>
+            <p>2. 點擊“輸入學生姓名”按鈕，在文本框內輸入所有學生的姓名，每行輸入一個學生姓名。完成後，點擊“送出”按鈕保存。如果已有姓名的資料，則不會重複添加。</p>
+            <p>3. 點擊“新增單筆學生”按鈕，輸入一個學生的姓名並點擊“送出”按鈕保存。此功能適合補充單個學生資料。</p>
+            <p>4. 在每日作業表中，點擊“今日作業”按鈕查看當天的所有作業。</p>
+            <p>5. 點擊“開啟檢核表”按鈕查看並管理當天的作業檢核情況。每個學生右方的按鈕可用來標記作業的提交狀態（未繳交、已繳交、待訂正、已訂正）。點擊學生姓名可依序切換該學生所有作業的狀態。</p>
+            <p>6. 點擊“匯出”按鈕將所有數據匯出為 JSON 文件。此文件可以保存當前所有數據以便日後匯入。</p>
+            <p>7. 點擊“匯入”按鈕選擇 JSON 文件匯入數據。匯入後，所有數據會自動更新到頁面上。</p>
+            <p>8. 點擊“重置”按鈕清空所有數據。此操作會刪除本地保存的所有數據，請謹慎使用。</p>
+        </div>
+        <button class="submit-button" onclick="hideOverlay()">關閉</button>
+    </div>
+
+    <div id="status-container">
+        <div class="button-container">
+            <button class="back-button" onclick="saveAndBack('${formatDate(new Date())}')">回上一頁</button>
+            <button class="status-toggle-button" onclick="toggleStatus()">作業狀態</button>
+            <button class="export-image-button" onclick="exportImage('${formatDate(new Date())}')">匯出圖片</button>
+        </div>
+        <div id="status-content" style="display: flex; justify-content: space-between;">
+            <div class="status-container-left" id="status-container-left"></div>
+            <div class="status-container-right" id="status-container-right"></div>
+        </div>
+    </div>
+
+    <div class="button-section-left" style="position: absolute; bottom: 20px; left: 20px;">
+        <button class="export-button toggle-on-checklist" onclick="exportData()">匯出</button>
+        <input type="file" id="import-file" style="display: none;" onchange="importData(event)">
+        <button class="import-button toggle-on-checklist" onclick="document.getElementById('import-file').click()">匯入</button>
+    </div>
+
+    <div style="position: absolute; bottom: 20px; right: 20px; display: flex; align-items: center;" class="toggle-on-checklist">
+        <button id="add-single-student-button" class="table-button student-button" onclick="showSingleStudentInput()">新增單筆學生</button>
+        <button id="enter-students-button" class="table-button student-button" onclick="showStudentInput()">輸入學生姓名</button>
+    </div>
+    
+    <div class="copyright" style="left: 300px;">
+        Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">阿剛老師</a>
+    </div>
+
+    <button class="reset-button toggle-on-checklist" style="position: absolute; top: 20px; left: 20px;" onclick="showResetConfirm()">重置</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.3.2/dist/html2canvas.min.js"></script>
+    <script>
+        let students = JSON.parse(localStorage.getItem('students')) || [];
+        let homeworkRows = JSON.parse(localStorage.getItem('homeworkRows')) || [];
+        let previousView = localStorage.getItem('previousView') || 'calendar';
+
+        const colors = ['#E6E6FA', '#D8BFD8', '#DDA0DD', '#DA70D6', '#EE82EE', '#FF00FF'];
+
+        function showHomeworkInput() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('homework-input-section').style.display = 'flex';
+            document.getElementById('student-input-section').style.display = 'none';
+            document.getElementById('single-student-input-section').style.display = 'none';
+            document.getElementById('instructions-section').style.display = 'none';
+        }
+
+        function showStudentInput() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('student-input-section').style.display = 'flex';
+            document.getElementById('homework-input-section').style.display = 'none';
+            document.getElementById('single-student-input-section').style.display = 'none';
+            document.getElementById('instructions-section').style.display = 'none';
+        }
+
+        function showSingleStudentInput() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('single-student-input-section').style.display = 'flex';
+            document.getElementById('student-input-section').style.display = 'none';
+            document.getElementById('homework-input-section').style.display = 'none';
+            document.getElementById('instructions-section').style.display = 'none';
+        }
+
+        function showInstructions() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('instructions-section').style.display = 'flex';
+            document.getElementById('homework-input-section').style.display = 'none';
+            document.getElementById('student-input-section').style.display = 'none';
+            document.getElementById('single-student-input-section').style.display = 'none';
+        }
+
+        function hideOverlay() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('homework-input-section').style.display = 'none';
+            document.getElementById('student-input-section').style.display = 'none';
+            document.getElementById('single-student-input-section').style.display = 'none';
+            document.getElementById('instructions-section').style.display = 'none';
+            const assignmentOverlay = document.querySelector('.assignment-overlay');
+            if (assignmentOverlay) {
+                assignmentOverlay.remove();
+            }
+        }
+
+        function submitHomework() {
+            const date = document.getElementById('homework-date').value;
+            const homeworkInput = document.getElementById('homework-input').value;
+            const homeworks = homeworkInput.split('\n').map(line => line.trim()).filter(line => line);
+            const row = [date, ...homeworks];
+            homeworkRows.push(row);
+            localStorage.setItem('homeworkRows', JSON.stringify(homeworkRows));
+            hideOverlay();
+            location.reload();
+        }
+
+        function submitStudents() {
+            const studentInput = document.getElementById('student-input').value;
+            const newStudents = studentInput.split('\n').map(line => line.trim()).filter(line => line && !students.includes(line));
+            students = [...students, ...newStudents];
+            localStorage.setItem('students', JSON.stringify(students));
+            hideOverlay();
+        }
+
+        function submitSingleStudent() {
+            const studentName = document.getElementById('single-student-input').value.trim();
+            if (studentName && !students.includes(studentName)) {
+                students.push(studentName);
+                localStorage.setItem('students', JSON.stringify(students));
+                hideOverlay();
+                populateTable();
+                generateCalendar(new Date().getFullYear(), new Date().getMonth());
+            }
+        }
+
+        function showResetConfirm() {
+            document.getElementById('reset-confirm-overlay').style.display = 'flex';
+        }
+
+        function hideResetOverlay() {
+            document.getElementById('reset-confirm-overlay').style.display = 'none';
+        }
+
+        function confirmReset() {
+            localStorage.removeItem('students');
+            localStorage.removeItem('homeworkRows');
+            students = [];
+            homeworkRows = [];
+            populateTable();
+            hideResetOverlay();
+            setTimeout(() => location.reload(), 100);
+        }
+
+        function exportData() {
+            const data = {
+                students,
+                homeworkRows,
+                checklists: JSON.parse(JSON.stringify(localStorage))
+            };
+            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = JSON.parse(e.target.result);
+                    const newStudents = data.students || [];
+                    const newHomeworkRows = data.homeworkRows || [];
+                    const checklists = data.checklists || {};
+                    students = [...new Set([...students, ...newStudents])];
+                    homeworkRows = [...homeworkRows, ...newHomeworkRows];
+                    localStorage.setItem('students', JSON.stringify(students));
+                    localStorage.setItem('homeworkRows', JSON.stringify(homeworkRows));
+                    Object.keys(checklists).forEach(key => {
+                        if (key.startsWith('checklist_')) {
+                            localStorage.setItem(key, checklists[key]);
+                        }
+                    });
+                    populateTable();
+                    generateCalendar(new Date().getFullYear(), new Date().getMonth());
+                    setTimeout(() => location.reload(), 100);
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function populateTable() {
+            const tableBody = document.getElementById('assignments-table').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+
+            const sortedRows = homeworkRows.sort((a, b) => {
+                const dateA = new Date(a[0]);
+                const dateB = new Date(b[0]);
+                return dateB - dateA;
+            });
+
+            sortedRows.forEach((cols, index) => {
+                if (cols.length > 1) {
+                    const date = new Date(cols[0]);
+                    const week = getWeekNumber(date);
+                    const tr = document.createElement('tr');
+                    const dateCell = document.createElement('td');
+                    dateCell.textContent = formatDate(cols[0]);
+                    tr.appendChild(dateCell);
+
+                    const weekdayCell = document.createElement('td');
+                    weekdayCell.textContent = getWeekday(cols[0]);
+                    tr.appendChild(weekdayCell);
+
+                    const assignmentButtonCell = document.createElement('td');
+                    const assignmentButtonDiv = document.createElement('div');
+                    assignmentButtonDiv.style.display = 'flex';
+                    assignmentButtonDiv.style.justifyContent = 'center';
+                    assignmentButtonDiv.style.alignItems = 'center';
+                    const assignmentButton = document.createElement('button');
+                    assignmentButton.textContent = '今日作業';
+                    assignmentButton.classList.add('table-button');
+                    assignmentButton.addEventListener('click', () => {
+                        openAssignment(cols, dateCell.textContent);
+                    });
+                    assignmentButtonDiv.appendChild(assignmentButton);
+                    assignmentButtonCell.appendChild(assignmentButtonDiv);
+                    tr.appendChild(assignmentButtonCell);
+
+                    const checklistButtonCell = document.createElement('td');
+                    const checklistButtonDiv = document.createElement('div');
+                    checklistButtonDiv.style.display = 'flex';
+                    checklistButtonDiv.style.justifyContent = 'center';
+                    checklistButtonDiv.style.alignItems = 'center';
+                    
+                    const openChecklistButton = document.createElement('button');
+                    openChecklistButton.textContent = '開啟檢核表';
+                    openChecklistButton.classList.add('table-button');
+                    openChecklistButton.addEventListener('click', () => {
+                        openChecklist(date, cols);
+                    });
+                    checklistButtonDiv.appendChild(openChecklistButton);
+
+                    checklistButtonCell.appendChild(checklistButtonDiv);
+                    tr.appendChild(checklistButtonCell);
+
+                    tableBody.appendChild(tr);
+                }
+            });
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            return `${yyyy}${mm}${dd}`;
+        }
+
+        function getWeekNumber(date) {
+            const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+            const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
+            return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+        }
+
+        function getWeekday(dateString) {
+            const date = new Date(dateString);
+            const options = { weekday: 'long' };
+            return date.toLocaleDateString('zh-Hant', options);
+        }
+
+        function openAssignment(cols, dateText) {
+            const assignments = cols.slice(1).map((assignment, index) => `<li style="font-size:${cols.length - 1 > 5 ? '80px' : '100px'};">${index + 1}. ${assignment}</li>`).join('');
+            const assignmentList = `
+                <ul>${assignments}</ul>
+            `;
+            const assignmentDiv = document.createElement('div');
+            assignmentDiv.classList.add('assignment-overlay');
+            assignmentDiv.innerHTML = `<div class="date-label">${dateText}</div>${assignmentList}`;
+            document.body.appendChild(assignmentDiv);
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function openChecklist(date, cols) {
+            const validCols = cols.filter(col => col.trim() !== '');
+            const storedData = JSON.parse(localStorage.getItem(`checklist_${formatDate(date)}`)) || {};
+            previousView = document.getElementById('view-toggle').value;
+            document.getElementById('main-content').innerHTML = `
+                <div class="button-container">
+                    <button class="back-button" onclick="saveAndBack('${formatDate(date)}')">回上一頁</button>
+                    <button class="status-toggle-button" onclick="toggleStatus()">作業狀態</button>
+                    <button class="export-image-button" onclick="exportImage('${formatDate(date)}')">匯出圖片</button>
+                </div>
+                <h1>作業檢核表 - ${formatDate(date)}</h1>
+                <div id="status-container">
+                    <div id="status-content" style="display: flex; justify-content: space-between;">
+                        <div class="status-container-left" id="status-container-left">
+                            ${generateStatusTables(validCols.slice(1, Math.ceil(validCols.length / 2)))}
+                        </div>
+                        <div class="status-container-right" id="status-container-right">
+                            ${generateStatusTables(validCols.slice(Math.ceil(validCols.length / 2)))}
+                        </div>
+                    </div>
+                </div>
+                <div id="tables-container" style="display: flex; flex-wrap: wrap; justify-content: center;">
+                    ${generateChecklistTables(validCols, storedData)}
+                </div>
+            `;
+            updateStatusLists();
+            document.querySelectorAll('.toggle-on-checklist').forEach(el => el.style.display = 'none');
+        }
+
+        function saveAndBack(date) {
+            const statusData = {};
+            const buttons = document.querySelectorAll('.status-button');
+            buttons.forEach(button => {
+                const student = button.closest('tr').querySelector('.student-name').textContent;
+                const assignment = button.closest('table').querySelector('thead th:nth-child(' + (Array.from(button.closest('tr').children).indexOf(button.closest('td')) + 1) + ')').textContent;
+                if (!statusData[assignment]) statusData[assignment] = {};
+                statusData[assignment][student] = button.style.backgroundColor;
+            });
+            localStorage.setItem(`checklist_${date}`, JSON.stringify(statusData));
+            backToPreviousView();
+        }
+
+        function toggleStatus() {
+            const statusContainer = document.getElementById('status-container');
+            const toggleButton = document.querySelector('.status-toggle-button');
+            if (statusContainer) {
+                if (statusContainer.style.display === 'none' || statusContainer.style.display === '') {
+                    statusContainer.style.display = 'block';
+                    toggleButton.textContent = '關閉狀態';
+                } else {
+                    statusContainer.style.display = 'none';
+                    toggleButton.textContent = '作業狀態';
+                }
+            }
+        }
+
+        function generateStatusTables(cols) {
+            let tables = '';
+            cols.forEach((col, index) => {
+                if (col.trim() !== '') {
+                    const color = colors[index % colors.length];
+                    tables += `
+                        <table class="status-table" style="background-color: ${color};">
+                            <thead>
+                                <tr>
+                                    <th>${col}</th>
+                                    <th>未繳交</th>
+                                    <th>待訂正</th>
+                                    <th>已訂正</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="background-color: ${color};"></td>
+                                    <td id="not-submitted-${col.trim()}" style="background-color: ${color};"></td>
+                                    <td id="correction-${col.trim()}" style="background-color: ${color};"></td>
+                                    <td id="corrected-${col.trim()}" style="background-color: ${color};"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    `;
+                }
+            });
+            return tables;
+        }
+
+        function generateChecklistTables(cols, storedData) {
+            let tables = '';
+            const chunkSize = 15;
+            for (let i = 0; i < students.length; i += chunkSize) {
+                tables += `
+                    <table style="table-layout: fixed; margin: 10px;">
+                        <thead>
+                            <tr>
+                                <th class="student-name" style="width: 120px; height: 30px;" onclick="toggleStudentStatus('${i}')">學生姓名</th>
+                                ${cols.slice(1).map(col => col.trim() !== '' ? `<th style="width: 120px; height: 30px;" onclick="toggleAssignmentStatus('${col.trim()}')">${col}</th>` : '').join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${generateChecklistRows(cols, i, i + chunkSize, storedData)}
+                        </tbody>
+                    </table>
+                `;
+            }
+            return tables;
+        }
+
+        function generateChecklistRows(cols, start, end, storedData) {
+            let rows = '';
+            const chunk = students.slice(start, end);
+            chunk.forEach((student, index) => {
+                let assignments = '';
+                for (let i = 1; i < cols.length; i++) {
+                    if (cols[i].trim() !== '') {
+                        const assignment = cols[i].trim();
+                        const status = storedData[assignment] && storedData[assignment][student] ? storedData[assignment][student] : 'red';
+                        const text = status === 'red' ? '未繳交' : status === 'green' ? '已繳交' : status === 'orange' ? '待訂正' : '已訂正';
+                        assignments += `
+                            <td style="width: 120px; height: 30px;">
+                                <button class="status-button" style="width: 120px; height: 30px; background-color: ${status}; color: white; font-size: 20px; font-weight: bold;" onclick="toggleButtonStatus(this, '${student}', '${assignment}')">${text}</button>
+                            </td>
+                        `;
+                    }
+                }
+                rows += `
+                    <tr>
+                        <td class="student-name" style="width: 120px; height: 30px;" onclick="toggleStudentStatus('${start + index}')">${student}</td>
+                        ${assignments}
+                    </tr>
+                `;
+            });
+            return rows;
+        }
+
+        function toggleButtonStatus(button, student, assignment) {
+            if (button.style.backgroundColor === 'red') {
+                button.style.backgroundColor = 'green';
+                button.textContent = '已繳交';
+            } else if (button.style.backgroundColor === 'green') {
+                button.style.backgroundColor = 'orange';
+                button.textContent = '待訂正';
+            } else if (button.style.backgroundColor === 'orange') {
+                button.style.backgroundColor = 'blue';
+                button.textContent = '已訂正';
+            } else {
+                button.style.backgroundColor = 'red';
+                button.textContent = '未繳交';
+            }
+            updateStatusLists();
+        }
+
+        function toggleAssignmentStatus(assignment) {
+            const buttons = document.querySelectorAll(`button[onclick*="${assignment}"]`);
+            buttons.forEach(button => {
+                toggleButtonStatus(button, button.closest('tr').querySelector('.student-name').textContent, assignment);
+            });
+        }
+
+        function toggleStudentStatus(rowIndex) {
+            const row = document.querySelectorAll(`#tables-container tbody tr`)[rowIndex];
+            const buttons = row.querySelectorAll('.status-button');
+            buttons.forEach(button => {
+                const assignment = button.closest('table').querySelector('thead th:nth-child(' + (Array.from(button.closest('tr').children).indexOf(button.closest('td')) + 1) + ')').textContent.trim();
+                toggleButtonStatus(button, row.querySelector('.student-name').textContent, assignment);
+            });
+        }
+
+        function updateStatusLists() {
+            const notSubmittedLists = {};
+            const correctionLists = {};
+            const correctedLists = {};
+
+            document.querySelectorAll('.status-table th').forEach(th => {
+                const col = th.textContent.trim();
+                notSubmittedLists[col] = document.getElementById(`not-submitted-${col}`);
+                correctionLists[col] = document.getElementById(`correction-${col}`);
+                correctedLists[col] = document.getElementById(`corrected-${col}`);
+                if (notSubmittedLists[col]) notSubmittedLists[col].innerHTML = '';
+                if (correctionLists[col]) correctionLists[col].innerHTML = '';
+                if (correctedLists[col]) correctedLists[col].innerHTML = '';
+            });
+
+            const buttons = document.querySelectorAll('.status-button');
+            buttons.forEach(button => {
+                const student = button.closest('tr').querySelector('.student-name').textContent;
+                const assignment = button.closest('table').querySelector('thead th:nth-child(' + (Array.from(button.closest('tr').children).indexOf(button.closest('td')) + 1) + ')').textContent;
+
+                if (button.style.backgroundColor === 'red' && notSubmittedLists[assignment]) {
+                    notSubmittedLists[assignment].innerHTML += `${notSubmittedLists[assignment].innerHTML ? ', ' : ''}${student}`;
+                } else if (button.style.backgroundColor === 'orange' && correctionLists[assignment]) {
+                    correctionLists[assignment].innerHTML += `${correctionLists[assignment].innerHTML ? ', ' : ''}${student}`;
+                } else if (button.style.backgroundColor === 'blue' && correctedLists[assignment]) {
+                    correctedLists[assignment].innerHTML += `${correctedLists[assignment].innerHTML ? ', ' : ''}${student}`;
+                }
+            });
+        }
+
+        function exportImage(date) {
+            html2canvas(document.body).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `作業檢核表 - ${date}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        function backToPreviousView() {
+            document.getElementById('view-toggle').value = previousView;
+            toggleView();
+            document.querySelectorAll('.toggle-on-checklist').forEach(el => el.style.display = '');
+        }
+
+        function toggleView() {
+            const view = document.getElementById('view-toggle').value;
+            localStorage.setItem('previousView', view);
+            if (view === 'list') {
+                showListView();
+            } else {
+                showCalendarView();
+            }
+        }
+
+        function showListView() {
+            document.getElementById('main-content').innerHTML = `
+                <table id="assignments-table">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>星期</th>
+                            <th>今日作業</th>
+                            <th>每日作業檢核表</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div class="empty-space"></div>
+            `;
+            populateTable();
+        }
+
+        function showCalendarView() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            generateCalendar(year, month);
+        }
+
+        function generateCalendar(year, month) {
+            const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+
+            let calendarHTML = `
+                <div class="month-navigation">
+                    <button onclick="changeMonth(${year}, ${month - 1})">上一月</button>
+                    <h2>${year}年 ${monthNames[month]}</h2>
+                    <button onclick="changeMonth(${year}, ${month + 1})">下一月</button>
+                </div>
+                <table class="calendar-table"><thead><tr>
+                    <th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th>
+                </tr></thead><tbody><tr>`;
+
+            for (let i = 0; i < firstDay.getDay(); i++) {
+                calendarHTML += '<td></td>';
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                if (firstDay.getDay() !== 0 && (firstDay.getDay() + day - 1) % 7 === 0) {
+                    calendarHTML += '</tr><tr>';
+                }
+                const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                calendarHTML += `<td data-date="${dateString}">${day}</td>`;
+            }
+
+            calendarHTML += '</tr></tbody></table><div class="calendar-spacer"></div>';
+            document.getElementById('main-content').innerHTML = calendarHTML;
+            populateCalendar();
+        }
+
+        function changeMonth(year, month) {
+            if (month < 0) {
+                year--;
+                month = 11;
+            } else if (month > 11) {
+                year++;
+                month = 0;
+            }
+            generateCalendar(year, month);
+        }
+
+        function populateCalendar() {
+            const calendarCells = document.querySelectorAll('.calendar-table td[data-date]');
+            calendarCells.forEach(cell => {
+                const date = cell.getAttribute('data-date');
+                const homework = homeworkRows.find(row => row[0] === date);
+                if (homework) {
+                    const assignmentButton = document.createElement('button');
+                    assignmentButton.textContent = '今日作業';
+                    assignmentButton.classList.add('calendar-button');
+                    assignmentButton.style.height = '30px';
+                    assignmentButton.addEventListener('click', () => {
+                        openAssignment(homework, date);
+                    });
+                    cell.appendChild(assignmentButton);
+
+                    const checklistButton = document.createElement('button');
+                    checklistButton.textContent = '開啟檢核表';
+                    checklistButton.classList.add('calendar-button');
+                    checklistButton.style.height = '30px';
+                    checklistButton.addEventListener('click', () => {
+                        openChecklist(new Date(date), homework);
+                    });
+                    cell.appendChild(checklistButton);
+                }
+            });
+        }
+
+        window.onload = function() {
+            document.getElementById('view-toggle').value = previousView;
+            toggleView();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行事曆生成編輯器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f7f7f7;
+        }
+        .container {
+            max-width: 600px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        label, input, button, textarea, select {
+            display: block;
+            margin-bottom: 10px;
+            width: 100%;
+            font-size: 14px;
+        }
+        button {
+            padding: 10px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .generate-button {
+            background-color: #007BFF;
+        }
+        .import-button {
+            background-color: #28a745;
+        }
+        .submit-button {
+            background-color: #007BFF;
+            width: 100px;
+            margin: 10px 0;
+        }
+        .help-button {
+            background-color: #007BFF;
+            color: white;
+            width: 150px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .help-popup {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+        }
+        th, td {
+            padding: 0;
+            text-align: center;
+            border: 1px solid #ccc;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        td.weekend, td.weekend.clickable {
+            background-color: #f0f0f0;
+        }
+        th.week, td.week {
+            width: 20px;
+        }
+        th.schedule, td.schedule {
+            width: 600px;
+        }
+        th.note, td.note {
+            width: 300px;
+        }
+        td.small-text {
+            font-size: 8px;
+        }
+        .data-list {
+            list-style-type: none;
+            padding: 0;
+            text-align: left;
+            font-size: 10px;
+            margin: 0;
+        }
+        .data-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2px 0;
+            border-bottom: 1px solid #ccc;
+            cursor: grab;
+            font-size: 10px;
+        }
+        .data-list li.dragging {
+            opacity: 0.5;
+        }
+        .data-list li button {
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .save-button, .export-button, .reset-button {
+            width: 170px;
+            margin: 20px 10px;
+            padding: 10px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .save-button {
+            background-color: #007BFF;
+            color: white;
+        }
+        .reset-button {
+            background-color: red;
+            color: white;
+        }
+        .export-button {
+            background-color: #28a745;
+            color: white;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 50px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            width: calc(100% - 20px);
+            margin: 0 auto;
+        }
+        .clickable {
+            cursor: pointer;
+        }
+        .formatted {
+            white-space: pre-wrap;
+            font-size: 10px;
+        }
+        .formatted .red {
+            color: red;
+        }
+        .formatted .blue {
+            color: blue;
+        }
+        .formatted .bold {
+            font-weight: bold;
+        }
+        .designed-by {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="editor">
+        <h1>行事曆生成編輯器</h1>
+        <label for="calendarTitle">輸入行事曆標題:</label>
+        <input type="text" id="calendarTitle" required>
+        
+        <label for="weeksCount">預計生成幾週行事曆:</label>
+        <input type="number" id="weeksCount" required>
+        
+        <label for="startDate">預計從哪一週開始:</label>
+        <input type="date" id="startDate" required>
+        
+        <button class="generate-button" onclick="generateList()">生成行事曆</button>
+        <button class="import-button" onclick="document.getElementById('fileInput').click()">匯入</button>
+        <input type="file" id="fileInput" style="display: none;" accept=".json" onchange="importData(event)">
+        <div class="designed-by">Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">阿剛老師</a></div>
+    </div>
+
+    <div id="calendarDisplay"></div>
+
+    <button class="help-button" onclick="showHelp()">使用說明</button>
+    <div id="helpPopup" class="help-popup" style="display: none;">
+        <p>歡迎使用行事曆生成編輯器！以下是使用說明：</p>
+        <ol>
+            <li>在輸入框中填寫行事曆標題、預計生成的週數和開始日期。</li>
+            <li>點擊“生成行事曆”按鈕生成行事曆。</li>
+            <li>在生成的行事曆中，可以點擊每個日期單元格來切換背景色。</li>
+            <li>在學校行事和備註欄位中輸入內容，點擊“送出”按鈕將內容添加到列表中。</li>
+            <li>點擊每個列表項目後的“X”按鈕可以刪除該項目。</li>
+            <li>點擊“另存HTML”按鈕可以將行事曆保存為HTML文件。</li>
+            <li>點擊“匯出”按鈕可以將行事曆數據導出為JSON文件。</li>
+            <li>點擊“回上頁”按鈕可以清空行事曆並返回初始畫面。</li>
+        </ol>
+        <p>HTML可以利用以下網址轉換成DOCX：<a href="https://www.aconvert.com/tw/document/html-to-docx/#google_vignette" target="_blank">轉換網址</a></p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('click', function(event) {
+                const helpPopup = document.getElementById('helpPopup');
+                if (!event.target.closest('.help-popup') && !event.target.closest('.help-button') && helpPopup.style.display === 'block') {
+                    helpPopup.style.display = 'none';
+                }
+            });
+        });
+
+        window.addEventListener('beforeunload', function(event) {
+            if (document.getElementById('calendarDisplay').innerHTML) {
+                exportData(true);
+                event.preventDefault();
+                event.returnValue = '';
+            }
+        });
+
+        function getSunday(date) {
+            const day = date.getDay();
+            return new Date(date.setDate(date.getDate() - day));
+        }
+
+        function generateList() {
+            const title = document.getElementById('calendarTitle').value;
+            const weeksCount = parseInt(document.getElementById('weeksCount').value);
+            const selectedDate = new Date(document.getElementById('startDate').value);
+            const startDate = getSunday(selectedDate);
+
+            if (!title || !weeksCount || !startDate) {
+                alert("請填寫所有欄位");
+                return;
+            }
+
+            let listHTML = `<div style="text-align: center;"><h1>${title}</h1><table><thead><tr><th class="week">週次</th>`;
+            for (let i = 0; i < 7; i++) {
+                listHTML += `<th class="week">${['日', '一', '二', '三', '四', '五', '六'][i]}</th>`;
+            }
+            listHTML += `<th class="schedule">學校行事<select onchange="updateFontSize(this, 'schedule')">${generateFontSizeOptions()}</select></th><th class="note">備註<select onchange="updateFontSize(this, 'note')">${generateFontSizeOptions()}</select></th></tr></thead><tbody>`;
+
+            for (let week = 0; week < weeksCount; week++) {
+                listHTML += `<tr><td class="week">${week + 1}</td>`;
+                for (let day = 0; day < 7; day++) {
+                    const currentDay = new Date(startDate);
+                    currentDay.setDate(startDate.getDate() + (week * 7) + day);
+                    const isWeekend = day === 0 || day === 6 ? 'weekend' : '';
+                    listHTML += `<td class="week ${isWeekend} small-text clickable" onclick="toggleBackgroundColor(this)" style="background-color: ${isWeekend ? 'rgb(240, 240, 240)' : 'white'}">${currentDay.getMonth() + 1}/${currentDay.getDate()}</td>`;
+                }
+                listHTML += `<td class="schedule"><textarea rows="3"></textarea><button class="submit-button" onclick="addItem(this, 'schedule')">送出</button><ul class="data-list" ondragover="allowDrop(event)" ondrop="drop(event)"></ul></td>`;
+                listHTML += `<td class="note"><textarea rows="3"></textarea><button class="submit-button" onclick="addItem(this, 'note')">送出</button><ul class="data-list" ondragover="allowDrop(event)" ondrop="drop(event)"></ul></td></tr>`;
+            }
+
+            listHTML += `</tbody></table></div>`;
+            listHTML += `<div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                            <button class="reset-button" onclick="resetList()">回上頁</button>
+                            <button class="save-button" onclick="saveHtml()">另存HTML</button>
+                            <button class="export-button" onclick="exportData()">匯出</button>
+                         </div>`;
+            
+            document.getElementById('editor').style.display = 'none';
+            document.getElementById('calendarDisplay').innerHTML = listHTML;
+            document.querySelector('.help-button').style.display = 'block';
+        }
+
+        function generateFontSizeOptions() {
+            let options = '';
+            for (let i = 8; i <= 14; i++) {
+                options += `<option value="${i}">${i}</option>`;
+            }
+            return options;
+        }
+
+        function updateFontSize(select, type) {
+            const size = select.value;
+            const items = document.querySelectorAll(`.${type} .data-list li span`);
+            items.forEach(item => {
+                item.style.fontSize = `${size}px`;
+            });
+        }
+
+        function addItem(button, type) {
+            const textarea = button.previousElementSibling;
+            const ul = button.nextElementSibling;
+            const fontSize = document.querySelector(`th.${type} select`).value;
+            const items = textarea.value.trim().split('\n');
+            
+            items.forEach(item => {
+                if (item) {
+                    const formattedItem = formatText(item);
+                    const li = document.createElement('li');
+                    li.draggable = true;
+                    li.ondragstart = drag;
+                    li.innerHTML = `<span class="formatted" style="font-size:${fontSize}px">${formattedItem}</span><button onclick="removeItem(this)">X</button>`;
+                    ul.appendChild(li);
+                }
+            });
+
+            textarea.value = '';
+        }
+
+        function removeItem(button) {
+            const li = button.parentElement;
+            li.parentElement.removeChild(li);
+        }
+
+        function toggleBackgroundColor(cell) {
+            cell.style.backgroundColor = cell.style.backgroundColor === 'rgb(240, 240, 240)' ? 'white' : 'rgb(240, 240, 240)';
+        }
+
+        function saveHtml() {
+            const title = document.getElementById('calendarTitle').value;
+            const calendarDisplay = document.getElementById('calendarDisplay').innerHTML;
+
+            const cleanDisplay = calendarDisplay.replace(/<textarea[^>]*>.*?<\/textarea>/g, '')
+                                                 .replace(/<button[^>]*>.*?<\/button>/g, '')
+                                                 .replace(/<button[^>]*X<\/button>/g, '')
+                                                 .replace(/<select[^>]*>.*?<\/select>/g, '');
+
+            const htmlContent = `
+                <!DOCTYPE html>
+                <html lang="zh-TW">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>${title}</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 20px;
+                            border: 1px solid black;
+                        }
+                        th, td {
+                            padding: 0;
+                            text-align: center;
+                            border: 1px solid black;
+                        }
+                        th, td.weekend {
+                            background-color: #f0f0f0;
+                        }
+                        th.week, td.week {
+                            width: 20px;
+                        }
+                        th.schedule, td.schedule {
+                            width: 600px;
+                        }
+                        th.note, td.note {
+                            width: 300px;
+                        }
+                        td.small-text {
+                            font-size: 8px;
+                        }
+                        .data-list {
+                            list-style-type: none;
+                            padding: 0;
+                            text-align: left;
+                            font-size: 10px;
+                            margin: 0;
+                        }
+                        .data-list li {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            padding: 2px 0;
+                            border-bottom: 1px solid #ccc;
+                            cursor: grab;
+                            font-size: 10px;
+                        }
+                        .red {
+                            color: red;
+                        }
+                        .blue {
+                            color: blue;
+                        }
+                        .bold {
+                            font-weight: bold;
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${cleanDisplay}
+                </body>
+                </html>
+            `;
+
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = generateFilename(title, 'html');
+            link.click();
+        }
+
+        function exportData(isAutoExport = false) {
+            const data = [];
+            const rows = document.querySelectorAll('#calendarDisplay table tbody tr');
+            rows.forEach(row => {
+                const weekData = {
+                    week: row.children[0].textContent.trim(),
+                    days: Array.from(row.children).slice(1, 8).map((cell, index) => ({
+                        date: cell.textContent.trim(),
+                        backgroundColor: cell.style.backgroundColor || (index === 0 || index === 6 ? 'rgb(240, 240, 240)' : 'white')
+                    })),
+                    schedule: Array.from(row.children[8].querySelectorAll('.data-list li')).map(li => ({
+                        text: li.querySelector('span').innerHTML,
+                        fontSize: li.querySelector('span').style.fontSize
+                    })),
+                    note: Array.from(row.children[9].querySelectorAll('.data-list li')).map(li => ({
+                        text: li.querySelector('span').innerHTML,
+                        fontSize: li.querySelector('span').style.fontSize
+                    }))
+                };
+                data.push(weekData);
+            });
+
+            const title = document.getElementById('calendarTitle').value;
+            const exportData = { data, title };
+            const json = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = generateFilename(title, 'json');
+            link.click();
+
+            if (isAutoExport) {
+                event.preventDefault();
+                event.returnValue = '';
+            }
+        }
+
+        function generateFilename(title, extension) {
+            const date = new Date();
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${title}_${year}${month}${day}.${extension}`;
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const importData = JSON.parse(e.target.result);
+                    const { data, title } = importData;
+                    populateList(data, title);
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function populateList(data, title) {
+            document.getElementById('calendarTitle').value = title;
+            let listHTML = `<div style="text-align: center;"><h1>${title}</h1><table><thead><tr><th class="week">週次</th>`;
+            for (let i = 0; i < 7; i++) {
+                listHTML += `<th class="week">${['日', '一', '二', '三', '四', '五', '六'][i]}</th>`;
+            }
+            listHTML += `<th class="schedule">學校行事<select onchange="updateFontSize(this, 'schedule')">${generateFontSizeOptions()}</select></th><th class="note">備註<select onchange="updateFontSize(this, 'note')">${generateFontSizeOptions()}</select></th></tr></thead><tbody>`;
+
+            data.forEach(weekData => {
+                listHTML += `<tr><td class="week">${weekData.week}</td>`;
+                weekData.days.forEach((day, index) => {
+                    const isWeekend = index === 0 || index === 6 ? 'weekend' : '';
+                    listHTML += `<td class="week ${isWeekend} small-text clickable" onclick="toggleBackgroundColor(this)" style="background-color: ${day.backgroundColor}">${day.date}</td>`;
+                });
+                listHTML += `<td class="schedule"><textarea rows="3"></textarea><button class="submit-button" onclick="addItem(this, 'schedule')">送出</button><ul class="data-list" ondragover="allowDrop(event)" ondrop="drop(event)">`;
+                weekData.schedule.forEach(item => {
+                    listHTML += `<li draggable="true" ondragstart="drag(event)"><span class="formatted" style="font-size:${item.fontSize}">${item.text}</span><button onclick="removeItem(this)">X</button></li>`;
+                });
+                listHTML += `</ul></td><td class="note"><textarea rows="3"></textarea><button class="submit-button" onclick="addItem(this, 'note')">送出</button><ul class="data-list" ondragover="allowDrop(event)" ondrop="drop(event)">`;
+                weekData.note.forEach(item => {
+                    listHTML += `<li draggable="true" ondragstart="drag(event)"><span class="formatted" style="font-size:${item.fontSize}">${item.text}</span><button onclick="removeItem(this)">X</button></li>`;
+                });
+                listHTML += `</ul></td></tr>`;
+            });
+
+            listHTML += `</tbody></table></div>`;
+            listHTML += `<div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                            <button class="reset-button" onclick="resetList()">回上頁</button>
+                            <button class="save-button" onclick="saveHtml()">另存HTML</button>
+                            <button class="export-button" onclick="exportData()">匯出</button>
+                         </div>`;
+            
+            document.getElementById('editor').style.display = 'none';
+            document.getElementById('calendarDisplay').innerHTML = listHTML;
+            document.querySelector('.help-button').style.display = 'block';
+        }
+
+        function formatText(text) {
+            return text.replace(/\*\*\*r(.*?)r\*\*\*/g, '<span class="red bold">$1</span>')
+                       .replace(/\*\*\*b(.*?)b\*\*\*/g, '<span class="blue bold">$1</span>')
+                       .replace(/\*\*r(.*?)r\*\*/g, '<span class="red bold">$1</span>')
+                       .replace(/\*\*b(.*?)b\*\*/g, '<span class="blue bold">$1</span>')
+                       .replace(/\*r(.*?)r\*/g, '<span class="red">$1</span>')
+                       .replace(/\*b(.*?)b\*/g, '<span class="blue">$1</span>')
+                       .replace(/\*\*(.*?)\*\*/g, '<span class="bold">$1</span>');
+        }
+
+        function resetList() {
+            document.getElementById('editor').style.display = 'block';
+            document.getElementById('calendarDisplay').innerHTML = '';
+            document.querySelector('.help-button').style.display = 'none';
+            setTimeout(() => {
+                location.reload();
+            }, 100); // 模拟按下 F5 键
+        }
+
+        let dragSrcEl = null;
+
+        function drag(event) {
+            dragSrcEl = event.target;
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/html', event.target.outerHTML);
+            event.target.classList.add('dragging');
+        }
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function drop(event) {
+            event.preventDefault();
+            if (dragSrcEl !== event.target && event.target.nodeName === 'LI') {
+                dragSrcEl.classList.remove('dragging');
+                const dropHTML = event.dataTransfer.getData('text/html');
+                event.target.closest('ul').removeChild(dragSrcEl);
+                event.target.insertAdjacentHTML('beforebegin', dropHTML);
+                const dropElement = event.target.previousSibling;
+                addDnDHandlers(dropElement);
+            }
+        }
+
+        function addDnDHandlers(element) {
+            element.addEventListener('dragstart', drag, false);
+            element.addEventListener('dragover', allowDrop, false);
+            element.addEventListener('drop', drop, false);
+        }
+
+        document.addEventListener('dragend', function(event) {
+            event.target.classList.remove('dragging');
+        });
+
+        function showHelp() {
+            const helpPopup = document.getElementById('helpPopup');
+            helpPopup.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

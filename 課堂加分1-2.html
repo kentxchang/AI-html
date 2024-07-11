@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>課堂加分系統</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .inputContainer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 300px;
+            height: 150px;
+            font-size: 16px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background-color: #800080;
+            color: white;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #9b59b6;
+        }
+        .scoreTable {
+            margin-top: 20px;
+            border-collapse: collapse;
+            display: inline-block;
+            vertical-align: top;
+            margin-right: 20px;
+            background-color: white;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .scoreTable, .scoreTable th, .scoreTable td {
+            border: 1px solid #ddd;
+        }
+        .scoreTable th, .scoreTable td {
+            padding: 8px;
+            text-align: center;
+        }
+        .scoreTable td button {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .highlight {
+            font-weight: bold;
+            color: red;
+        }
+        #chart {
+            margin-top: 20px;
+            width: 1000px;
+        }
+        #controlSection {
+            margin-top: 20px;
+            display: none;
+            text-align: center;
+        }
+        #inputSection button {
+            display: block;
+            margin: 10px auto;
+        }
+        #fileButtons {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+        }
+        #fileButtons button {
+            margin: 5px;
+        }
+        #footer {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 14px;
+        }
+        #footer a {
+            color: #800080;
+        }
+        #footer a:hover {
+            text-decoration: underline;
+        }
+        #groupButtonsTable {
+            margin-top: 20px;
+            border-collapse: collapse;
+            display: none;
+            margin-bottom: 20px;
+            background-color: white;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        #groupButtonsTable th, #groupButtonsTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>課堂加分系統</h1>
+    <div id="inputSection" class="inputContainer">
+        <textarea id="studentGroups" placeholder="每行輸入一個小組名稱和學生姓名，中間用Tab隔開；或是直接從excel上貼上二欄，第一欄為分組名稱，第二欄為學生姓名"></textarea><br>
+    </div>
+    <button id="generateButton" onclick="submitNames()">生成學生加扣分輸入表</button>
+
+    <table id="groupButtonsTable"></table>
+
+    <div id="scoreSection"></div>
+
+    <div id="chartSection">
+        <canvas id="chart"></canvas>
+    </div>
+
+    <div id="controlSection">
+        <button onclick="showScoreSection()">加扣分</button>
+        <button onclick="showChartSection()">呈現直條圖</button>
+    </div>
+
+    <div id="fileButtons">
+        <button onclick="exportScores()">匯出成績</button>
+        <button onclick="importScores()">載入成績</button>
+        <input type="file" id="fileInput" style="display: none;" accept=".csv" onchange="handleFileUpload(event)">
+    </div>
+
+    <div id="footer">
+        Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">阿剛老師</a>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const backgroundColors = ['#FFFACD', '#FFDAB9', '#E6E6FA', '#E0FFFF', '#F0E68C'];
+        document.body.style.backgroundColor = backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
+
+        const groupColors = ['#FFEBEE', '#E8F5E9', '#E3F2FD', '#FFF3E0', '#F3E5F5', '#E0F7FA'];
+        let students = [];
+        let groups = {};
+        let scores = {};
+        let chart;
+
+        function submitNames() {
+            const groupInput = document.getElementById('studentGroups').value.trim().split('\n').map(line => line.split('\t').map(part => part.trim()));
+
+            groupInput.forEach(([group, student], index) => {
+                if (!groups[group]) groups[group] = [];
+                groups[group].push(`${student}-${index}`);
+                students.push({ name: student, group, key: `${student}-${index}` });
+                scores[`${student}-${index}`] = 0;
+            });
+
+            document.getElementById('inputSection').style.display = 'none';
+            document.getElementById('generateButton').style.display = 'none';
+            document.getElementById('controlSection').style.display = 'block';
+            if (Object.keys(groups).length > 0) {
+                document.getElementById('groupButtonsTable').style.display = 'table';
+                updateGroupButtonsTable();
+            }
+            showScoreSection();
+        }
+
+        function updateGroupButtonsTable() {
+            const groupButtonsTable = document.getElementById('groupButtonsTable');
+            groupButtonsTable.innerHTML = '';
+            let currentRow = groupButtonsTable.insertRow();
+            let cellCount = 0;
+            Object.keys(groups).forEach((group, index) => {
+                if (cellCount % 4 === 0 && cellCount !== 0) {
+                    currentRow = groupButtonsTable.insertRow();
+                }
+                const groupCell = currentRow.insertCell();
+                const buttonCell = currentRow.insertCell();
+                groupCell.textContent = group;
+                buttonCell.innerHTML = `<button onclick="changeGroupScore('${group}', 1)">加分</button> <button onclick="changeGroupScore('${group}', -1)">扣分</button>`;
+                groupCell.style.backgroundColor = groupColors[index % groupColors.length];
+                buttonCell.style.backgroundColor = groupColors[index % groupColors.length];
+                cellCount += 2;
+            });
+        }
+
+        function showScoreSection() {
+            document.getElementById('scoreSection').style.display = 'block';
+            document.getElementById('groupButtonsTable').style.display = 'table';
+            document.getElementById('chartSection').style.display = 'none';
+            updateScoreTables();
+        }
+
+        function showChartSection() {
+            document.getElementById('scoreSection').style.display = 'none';
+            document.getElementById('groupButtonsTable').style.display = 'none';
+            document.getElementById('chartSection').style.display = 'block';
+            renderChart();
+        }
+
+        function updateScoreTables() {
+            const scoreSection = document.getElementById('scoreSection');
+            scoreSection.innerHTML = '';
+            let currentTable = createScoreTable();
+            scoreSection.appendChild(currentTable);
+            let groupIndex = 0;
+            let currentGroup = students[0]?.group;
+            students.forEach((student, index) => {
+                if (student.group !== currentGroup) {
+                    currentGroup = student.group;
+                    groupIndex++;
+                }
+                if (index % 10 === 0 && index !== 0) {
+                    currentTable = createScoreTable();
+                    scoreSection.appendChild(currentTable);
+                }
+                addRowToTable(currentTable, student, index, groupColors[groupIndex % groupColors.length]);
+            });
+            highlightTopScore();
+            if (chart) {
+                updateChart();
+            }
+        }
+
+        function createScoreTable() {
+            const table = document.createElement('table');
+            table.className = 'scoreTable';
+            const thead = table.createTHead();
+            const row = thead.insertRow();
+            const thGroup = document.createElement('th');
+            const thName = document.createElement('th');
+            const thAdd = document.createElement('th');
+            const thScore = document.createElement('th');
+            const thSubtract = document.createElement('th');
+            thGroup.textContent = '小組名稱';
+            thName.textContent = '姓名';
+            thAdd.textContent = '加分';
+            thScore.textContent = '得分';
+            thSubtract.textContent = '扣分';
+            row.appendChild(thGroup);
+            row.appendChild(thName);
+            row.appendChild(thAdd);
+            row.appendChild(thScore);
+            row.appendChild(thSubtract);
+            table.createTBody();
+            return table;
+        }
+
+        function addRowToTable(table, student, index, bgColor) {
+            const tbody = table.getElementsByTagName('tbody')[0];
+            const row = tbody.insertRow();
+            row.style.backgroundColor = bgColor;
+            const cellGroup = row.insertCell(0);
+            const cellName = row.insertCell(1);
+            const cellAdd = row.insertCell(2);
+            const cellScore = row.insertCell(3);
+            const cellSubtract = row.insertCell(4);
+
+            cellGroup.textContent = student.group;
+            cellName.textContent = student.name;
+            cellAdd.innerHTML = `<button onclick="changeScore('${student.key}', 1)">+</button>`;
+            cellScore.textContent = scores[student.key];
+            cellSubtract.innerHTML = `<button onclick="changeScore('${student.key}', -1)">-</button>`;
+        }
+
+        function changeScore(key, delta) {
+            scores[key] += delta;
+            updateScoreTables();
+        }
+
+        function changeGroupScore(group, delta) {
+            groups[group].forEach(studentKey => {
+                scores[studentKey] += delta;
+            });
+            updateScoreTables();
+        }
+
+        function highlightTopScore() {
+            const maxScore = Math.max(...Object.values(scores));
+            const cells = document.querySelectorAll('.scoreTable td:nth-child(4)');
+            cells.forEach(cell => {
+                cell.classList.remove('highlight');
+                if (parseInt(cell.textContent) === maxScore) {
+                    cell.classList.add('highlight');
+                }
+            });
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('chart').getContext('2d');
+            if (chart) {
+                chart.destroy();
+            }
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: students.map(student => student.name),
+                    datasets: [{
+                        label: '得分',
+                        data: students.map(student => scores[student.key]),
+                        backgroundColor: students.map(student => scores[student.key] === Math.max(...Object.values(scores)) ? 'darkblue' : 'rgba(54, 162, 235, 0.2)'),
+                        borderColor: students.map(student => scores[student.key] === Math.max(...Object.values(scores)) ? 'darkblue' : 'rgba(54, 162, 235, 1)'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: students.length <= 6 ? 0 : 90,
+                                minRotation: 0,
+                                font: function(context) {
+                                    const width = context.chart.width;
+                                    const size = students.length <= 6 ? 14 : Math.round(width / students.length / 1.5);
+                                    return {
+                                        size: size > 8 ? size : 8,
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart() {
+            const maxScore = Math.max(...Object.values(scores));
+            chart.data.datasets[0].data = students.map(student => scores[student.key]);
+            chart.data.datasets[0].backgroundColor = students.map(student => scores[student.key] === maxScore ? 'darkblue' : 'rgba(54, 162, 235, 0.2)');
+            chart.data.datasets[0].borderColor = students.map(student => scores[student.key] === maxScore ? 'darkblue' : 'rgba(54, 162, 235, 1)');
+            chart.update();
+        }
+
+        function exportScores() {
+            const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const csvContent = "data:text/csv;charset=utf-8," 
+                + "小組,姓名,得分\n"
+                + students.map(student => `${student.group},${student.name},${scores[student.key]}`).join("\n");
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `${date}成績.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function importScores() {
+            document.getElementById('fileInput').click();
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const csvData = event.target.result;
+                const rows = csvData.split("\n");
+                students = [];
+                groups = {};
+                scores = {};
+                rows.slice(1).forEach((row, index) => {
+                    const [group, name, score] = row.split(",");
+                    if (group && name && score !== undefined) {
+                        const key = `${name.trim()}-${index}`;
+                        if (!groups[group]) groups[group] = [];
+                        groups[group].push(key);
+                        students.push({ name: name.trim(), group: group.trim(), key });
+                        scores[key] = parseInt(score.trim());
+                    }
+                });
+                document.getElementById('inputSection').style.display = 'none';
+                document.getElementById('generateButton').style.display = 'none';
+                document.getElementById('controlSection').style.display = 'block';
+                if (Object.keys(groups).length > 0) {
+                    document.getElementById('groupButtonsTable').style.display = 'table';
+                    updateGroupButtonsTable();
+                }
+                showScoreSection();
+                renderChart();
+            };
+            reader.readAsText(file);
+        }
+
+        document.getElementById('inputSection').style.display = 'block';
+    </script>
+</body>
+</html>

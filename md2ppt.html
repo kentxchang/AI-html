@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown 轉線上簡報</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans TC', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            margin: 0;
+            color: #ecf0f1;
+            position: relative;
+        }
+
+        .container {
+            width: 80%;
+            max-width: 1000px;
+            padding: 2rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header-title {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 3.5em;
+            font-weight: 700;
+            background: linear-gradient(45deg, #ffcc00, #ff6600);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        #markdownInput {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            background-color: #ffffff;
+            color: #2c3e50;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        #markdownInput:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.5);
+        }
+
+        #startPresentationBtn {
+            padding: 12px 24px;
+            font-size: 18px;
+            background: linear-gradient(45deg, #3498db, #2ecc71);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #startPresentationBtn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        #presentation {
+            display: none;
+            width: 100%;
+            height: 70vh;
+            background-color: rgba(52, 73, 94, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+
+        .navBtn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 15px 25px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 24px;
+        }
+
+        .navBtn:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        #prevBtn {
+            left: 20px;
+        }
+
+        #nextBtn {
+            right: 20px;
+        }
+
+        #slideContent {
+            overflow-y: auto;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: left;
+            padding: 20px;
+            box-sizing: border-box;
+            color: #ecf0f1;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            font-size: 3em;
+            transition: opacity 0.5s;
+        }
+
+        #controlBtns {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0 20px;
+            box-sizing: border-box;
+            margin-top: 20px;
+            visibility: hidden;
+        }
+
+        #regenerateBtn,
+        #fullscreenBtn {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        #fullscreenBtn {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+        }
+
+        #regenerateBtn:hover,
+        #fullscreenBtn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        #themeBtnsAfter {
+            display: none;
+            justify-content: center;
+            width: 100%;
+            position: absolute;
+            bottom: 20px;
+        }
+
+        .themeBtn {
+            margin: 0 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .themeBtn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .footer {
+            position: absolute;
+            right: 20px;
+            bottom: 20px;
+            font-size: 14px;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .footer:hover {
+            opacity: 1;
+        }
+
+        .footer a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/showdown/dist/showdown.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="header-title">Markdown 轉線上簡報</h1>
+        <div id="controlBtns">
+            <button id="regenerateBtn">R</button>
+            <button id="fullscreenBtn">F</button>
+        </div>
+        <textarea id="markdownInput" placeholder="使用AI生成你要報告主題的markdown格式心智圖，再把 Markdown 文字貼在這裡..."></textarea>
+        <button id="startPresentationBtn">轉換成簡報</button>
+
+        <div id="presentation">
+            <button id="prevBtn" class="navBtn">&#10094;</button>
+            <button id="nextBtn" class="navBtn">&#10095;</button>
+            <div id="slideContent"></div>
+        </div>
+
+        <div id="themeBtnsAfter">
+            <button class="themeBtn" id="theme1-after" style="background-color: #3498db; color: white;">藍色主題</button>
+            <button class="themeBtn" id="theme2-after" style="background-color: #e74c3c; color: white;">紅色主題</button>
+            <button class="themeBtn" id="theme3-after" style="background-color: #2ecc71; color: white;">綠色主題</button>
+            <button class="themeBtn" id="theme4-after" style="background-color: #ff6600; color: white;">橘色主題</button>
+            <button class="themeBtn" id="theme5-after" style="background-color: #9b59b6; color: white;">紫色主題</button>
+        </div>
+    </div>
+
+    <div class="footer">
+        Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">阿剛老師</a>
+    </div>
+
+    <script>
+        const startPresentationBtn = document.getElementById('startPresentationBtn');
+        const markdownInput = document.getElementById('markdownInput');
+        const presentation = document.getElementById('presentation');
+        const slideContent = document.getElementById('slideContent');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const controlBtns = document.getElementById('controlBtns');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const regenerateBtn = document.getElementById('regenerateBtn');
+        const themeBtnsAfter = document.getElementById('themeBtnsAfter');
+        const container = document.querySelector('.container');
+        let slides = [];
+        let currentSlideIndex = 0;
+
+        startPresentationBtn.addEventListener('click', () => {
+            const markdownText = markdownInput.value;
+            const converter = new showdown.Converter();
+            const htmlContent = converter.makeHtml(markdownText);
+            slides = splitIntoSlides(htmlContent);
+            currentSlideIndex = 0;
+            showSlide(currentSlideIndex);
+            presentation.style.display = 'block';
+            startPresentationBtn.style.display = 'none';
+            markdownInput.style.display = 'none';
+            controlBtns.style.visibility = 'visible';
+            themeBtnsAfter.style.display = 'flex';
+            container.style.width = '100%';
+            container.style.maxWidth = 'none';
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentSlideIndex > 0) {
+                transitionSlide(currentSlideIndex, currentSlideIndex - 1);
+                currentSlideIndex--;
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlideIndex < slides.length - 1) {
+                transitionSlide(currentSlideIndex, currentSlideIndex + 1);
+                currentSlideIndex++;
+            } else if (currentSlideIndex === slides.length - 1) {
+                transitionSlide(currentSlideIndex, -1);
+                currentSlideIndex++;
+            }
+        });
+
+        fullscreenBtn.addEventListener('click', () => {
+            if (presentation.requestFullscreen) {
+                presentation.requestFullscreen();
+            } else if (presentation.mozRequestFullScreen) {
+                presentation.mozRequestFullScreen();
+            } else if (presentation.webkitRequestFullscreen) {
+                presentation.webkitRequestFullscreen();
+            } else if (presentation.msRequestFullscreen) {
+                presentation.msRequestFullscreen();
+            }
+        });
+
+        regenerateBtn.addEventListener('click', () => {
+            markdownInput.value = '';
+            presentation.style.display = 'none';
+            startPresentationBtn.style.display = 'block';
+            markdownInput.style.display = 'block';
+            controlBtns.style.visibility = 'hidden';
+            themeBtnsAfter.style.display = 'none';
+            container.style.width = '80%';
+            container.style.maxWidth = '1000px';
+        });
+
+        function splitIntoSlides(htmlContent) {
+            const slideMarkers = ['<h1', '<h2', '<h3', '<h4'];
+            let slideArray = [];
+            let startIndex = 0;
+
+            while (startIndex < htmlContent.length) {
+                let endIndex = findNextMarkerIndex(htmlContent, slideMarkers, startIndex + 1);
+                if (endIndex === -1) {
+                    endIndex = htmlContent.length;
+                }
+                slideArray.push(htmlContent.slice(startIndex, endIndex));
+                startIndex = endIndex;
+            }
+
+            return slideArray;
+        }
+
+        function findNextMarkerIndex(htmlContent, markers, startIndex) {
+            return markers.reduce((minIndex, marker) => {
+                const index = htmlContent.indexOf(marker, startIndex);
+                if (index !== -1 && (minIndex === -1 || index < minIndex)) {
+                    return index;
+                }
+                return minIndex;
+            }, -1);
+        }
+
+        function showSlide(index) {
+            if (index === -1) {
+                slideContent.innerHTML = '<h1>簡報結束</h1>';
+            } else {
+                slideContent.innerHTML = slides[index];
+                autoResizeFont(slideContent);
+                const headers = slideContent.querySelectorAll('h2, h3, h4');
+                headers.forEach(header => {
+                    header.style.marginTop = '0';
+                    header.style.padding = '10px';
+                    header.style.borderRadius = '10px';
+                    header.style.backgroundColor = '#3498db';
+                    header.style.color = 'white';
+                    header.style.textAlign = 'center';
+                    header.style.width = '100%';
+                    header.style.boxSizing = 'border-box';
+                });
+                const boldElements = slideContent.querySelectorAll('strong');
+                boldElements.forEach(boldElement => {
+                    boldElement.style.color = '#ffcc00'; // 設定非標題文字中，粗體字的顏色
+                    boldElement.style.fontSize = 'calc(1em + 8px)'; // 將字體加大 8 像素
+                    boldElement.style.listStyle = 'none'; // 去掉項目符號
+                });
+            }
+        }
+
+        function autoResizeFont(element) {
+            let fontSize = 3;
+            element.style.fontSize = `${fontSize}em`;
+            while (element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth) {
+                fontSize -= 0.1;
+                element.style.fontSize = `${fontSize}em`;
+                if (fontSize < 1) {
+                    break;
+                }
+            }
+        }
+
+        function transitionSlide(fromIndex, toIndex) {
+            slideContent.style.opacity = '0';
+            setTimeout(() => {
+                showSlide(toIndex);
+                slideContent.style.opacity = '1';
+            }, 500);
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowRight') {
+                nextBtn.click();
+            } else if (event.key === 'ArrowLeft') {
+                prevBtn.click();
+            } else if (event.key === 'r') {
+                regenerateBtn.click();
+            } else if (event.key === 'f') {
+                fullscreenBtn.click();
+            }
+        });
+
+        const themes = {
+            theme1: { backgroundColor: '#34495e', color: '#ecf0f1', headerBackground: '#3498db' },
+            theme2: { backgroundColor: '#e74c3c', color: '#ecf0f1', headerBackground: '#c0392b' },
+            theme3: { backgroundColor: '#2ecc71', color: '#ecf0f1', headerBackground: '#27ae60' },
+            theme4: { backgroundColor: '#ff6600', color: '#2c3e50', headerBackground: '#e67e22' },
+            theme5: { backgroundColor: '#9b59b6', color: '#ecf0f1', headerBackground: '#8e44ad' },
+        };
+
+        function applyTheme(themeId) {
+            const theme = themes[themeId];
+            document.body.style.background = theme.backgroundColor;
+            document.body.style.color = theme.color;
+            slideContent.style.color = theme.color;
+            presentation.style.backgroundColor = theme.backgroundColor;
+            const headers = slideContent.querySelectorAll('h2, h3, h4');
+            headers.forEach(header => {
+                header.style.backgroundColor = theme.headerBackground;
+            });
+        }
+
+        Object.keys(themes).forEach(themeId => {
+            document.getElementById(themeId + '-after').addEventListener('click', () => {
+                applyTheme(themeId);
+            });
+        });
+    </script>
+</body>
+</html>

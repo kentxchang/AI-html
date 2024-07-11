@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作業繳交檢核表生成器</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+            background: #f4f4f4;
+            color: #333;
+            position: relative;
+            min-height: 100vh;
+        }
+        h1 {
+            margin: 20px 0;
+            color: #555;
+        }
+        .container {
+            display: flex;
+            justify-content: space-around;
+            width: 80%;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        .container > div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 45%;
+        }
+        label {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        textarea {
+            width: 100%;
+            height: 400px; /* Original height 200px + additional 200px */
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: none;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background: #5cb85c;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        button:hover {
+            background: #4cae4c;
+        }
+        table {
+            margin: 20px 20px 20px 20px;
+            border-collapse: collapse;
+            width: auto;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 5px;
+            text-align: center;
+            width: 50px;
+        }
+        th {
+            background: #f9f9f9;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        td {
+            position: relative;
+            font-size: 12px;
+        }
+        .student-name {
+            font-size: 14px;
+            background-color: #ffffcc;
+        }
+        label {
+            margin-left: 5px;
+            font-size: 12px;
+        }
+        .unchecked {
+            color: red;
+        }
+        .checked {
+            color: blue;
+        }
+        #tables {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+        }
+        .footer {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+        .footer a {
+            color: #888;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>作業繳交檢核表 <span id="date"></span></h1>
+    <div class="container" id="input-section">
+        <div>
+            <label for="assignments">作業名稱</label>
+            <textarea id="assignments" placeholder="每行一個作業名稱"></textarea>
+        </div>
+        <div>
+            <label for="students">學生姓名</label>
+            <textarea id="students" placeholder="每行一個學生姓名"></textarea>
+        </div>
+    </div>
+    <button onclick="generateTables()">生成作業繳交檢核表</button>
+    <div id="tables"></div>
+    <button id="reset-button" style="display: none;" onclick="resetTables()">重設檢核表</button>
+    <button id="save-button" style="display: none;" onclick="saveAsHtml()">另存當下結果html</button>
+    <div class="footer">
+        Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">阿剛老師</a>
+    </div>
+
+    <script>
+        function generateTables() {
+            const assignments = document.getElementById('assignments').value.split('\n').filter(Boolean);
+            const students = document.getElementById('students').value.split('\n').filter(Boolean);
+            const tablesContainer = document.getElementById('tables');
+            const inputSection = document.getElementById('input-section');
+            const generateButton = document.querySelector('button[onclick="generateTables()"]');
+            const resetButton = document.getElementById('reset-button');
+            const saveButton = document.getElementById('save-button');
+            
+            // Hide input section and generate button, show reset and save buttons
+            inputSection.style.display = 'none';
+            generateButton.style.display = 'none';
+            resetButton.style.display = 'block';
+            saveButton.style.display = 'block';
+
+            tablesContainer.innerHTML = ''; // Clear previous tables
+
+            const chunkSize = 10;
+            let tableIndex = 0;
+            for (let i = 0; i < students.length; i += chunkSize) {
+                const chunk = students.slice(i, i + chunkSize);
+                const table = document.createElement('table');
+                table.id = `table-${tableIndex}`;
+                const headerRow = document.createElement('tr');
+                
+                const headerCell = document.createElement('th');
+                headerCell.textContent = '學生姓名';
+                headerCell.style.width = '80px';  // Ensure the student name column is wider
+                headerRow.appendChild(headerCell);
+
+                assignments.forEach((assignment, index) => {
+                    const headerCell = document.createElement('th');
+                    headerCell.innerHTML = `${assignment}<br>
+                        <input type="checkbox" id="allComplete-${tableIndex}-${index}" onchange="toggleAllComplete(${tableIndex}, ${index})">`;
+                    headerRow.appendChild(headerCell);
+                });
+                
+                table.appendChild(headerRow);
+
+                chunk.forEach((student, rowIndex) => {
+                    const row = document.createElement('tr');
+                    const studentCell = document.createElement('td');
+                    studentCell.textContent = student;
+                    studentCell.style.width = '80px';  // Ensure the student name column is wider
+                    studentCell.classList.add('student-name');
+                    row.appendChild(studentCell);
+
+                    assignments.forEach((assignment, colIndex) => {
+                        const cell = document.createElement('td');
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.className = `assignment-checkbox-${tableIndex}-${colIndex}`;
+                        const label = document.createElement('label');
+                        label.className = 'unchecked';
+                        label.textContent = 'X';
+                        checkbox.addEventListener('change', () => {
+                            label.textContent = checkbox.checked ? 'O' : 'X';
+                            label.className = checkbox.checked ? 'checked' : 'unchecked';
+                        });
+                        cell.appendChild(checkbox);
+                        cell.appendChild(label);
+                        row.appendChild(cell);
+                    });
+
+                    table.appendChild(row);
+                });
+
+                tablesContainer.appendChild(table);
+                tableIndex++;
+            }
+        }
+
+        function toggleAllComplete(tableIndex, colIndex) {
+            const allCompleteCheckbox = document.getElementById(`allComplete-${tableIndex}-${colIndex}`);
+            const checkboxes = document.querySelectorAll(`#table-${tableIndex} .assignment-checkbox-${tableIndex}-${colIndex}`);
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = allCompleteCheckbox.checked;
+                const label = checkbox.nextElementSibling;
+                label.textContent = checkbox.checked ? 'O' : 'X';
+                label.className = checkbox.checked ? 'checked' : 'unchecked';
+            });
+        }
+
+        function resetTables() {
+            document.getElementById('tables').innerHTML = '';
+            document.getElementById('input-section').style.display = 'flex';
+            document.querySelector('button[onclick="generateTables()"]').style.display = 'block';
+            document.getElementById('reset-button').style.display = 'none';
+            document.getElementById('save-button').style.display = 'none';
+        }
+
+        function setDate() {
+            const dateElement = document.getElementById('date');
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+            const day = String(today.getDate()).padStart(2, '0');
+            dateElement.textContent = `(${year}${month}${day})`;
+        }
+
+        function saveAsHtml() {
+            const date = new Date();
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+            const day = String(date.getDate()).padStart(2, '0');
+            const dateStr = `${year}${month}${day}`;
+            const filename = `${dateStr}.html`;
+
+            // Remove buttons and checkboxes before saving
+            const inputSection = document.getElementById('input-section');
+            const resetButton = document.getElementById('reset-button');
+            const saveButton = document.getElementById('save-button');
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+            const labels = document.querySelectorAll('label');
+            const scripts = document.querySelectorAll('script');
+
+            inputSection.style.display = 'none';
+            resetButton.style.display = 'none';
+            saveButton.style.display = 'none';
+
+            checkboxes.forEach(checkbox => checkbox.style.display = 'none');
+            labels.forEach(label => label.style.display = 'block');
+            
+            // Modify date to plain text
+            const dateElement = document.getElementById('date');
+            const dateText = dateElement.textContent;
+            dateElement.outerHTML = `<span id="date">${dateText}</span>`;
+
+            // Remove all script tags
+            scripts.forEach(script => script.remove());
+
+            const content = document.documentElement.outerHTML;
+            const blob = new Blob([content], { type: 'text/html' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+
+            // Restore buttons and checkboxes after saving
+            inputSection.style.display = 'flex';
+            resetButton.style.display = 'block';
+            saveButton.style.display = 'block';
+
+            checkboxes.forEach(checkbox => checkbox.style.display = 'block');
+            labels.forEach(label => label.style.display = 'inline');
+        }
+
+        setDate();
+    </script>
+</body>
+</html>

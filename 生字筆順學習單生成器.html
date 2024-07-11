@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生字筆順Qrcode學習單生成器</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f3e5f5;
+        }
+        #container {
+            text-align: center;
+            border: 1px solid #e1bee7;
+            padding: 20px;
+            box-shadow: 0px 0px 10px #ce93d8;
+            background: #f3e5f5;
+            position: relative;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        h1.main-title {
+            color: #6a1b9a;
+            text-align: center;
+            font-size: 24px;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 2pt solid #ba68c8;
+            border-collapse: collapse;
+            text-align: center;
+        }
+        th, td {
+            padding: 10px;
+            background: #e1bee7;
+        }
+        textarea, input, select, button {
+            width: 90%;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ba68c8;
+            background-color: #fce4ec;
+        }
+        button {
+            color: #4a148c;
+            background-color: #ce93d8;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        button:hover {
+            background-color: #ab47bc;
+            color: #ffffff;
+        }
+        .footer {
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            font-size: 12px;
+            color: #4a148c;
+        }
+        @media (max-width: 600px) {
+            h1.main-title {
+                font-size: 18px;
+            }
+            .footer {
+                position: static;
+                text-align: center;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="main-title">生字筆順Qrcode學習單生成器</h1>
+    <div id="container">
+        <div>
+            <label>請輸入學習單標題：</label><br>
+            <input type="text" id="titleInput" placeholder="輸入標題">
+        </div>
+        <div>
+            <label>選擇生字筆順網站：</label><br>
+            <select id="websiteSelector">
+                <option value="https://gsyan888.github.io/html5_fun/html5_stroke_parts/html5_stroke_parts.html?words=">雄哥的生字筆順網</option>
+                <option value="https://stroke-order.learningweb.moe.edu.tw/mobiles/characters_query_result.tiles?csrfPreventionSalt=&text=">教育部生字筆順網</option>
+                <option value="">網址Qrcode生成</option>
+            </select>
+        </div>
+        <div>
+            <label>請貼上第一課、第二課，一課一行：</label><br>
+            <textarea id="lessonsInput" rows="5"></textarea>
+        </div>
+        <div>
+            <label>請貼上各課生字，一課一行：</label><br>
+            <textarea id="charactersInput" rows="5"></textarea>
+        </div>
+        <button onclick="generateLinks()">生成學習單</button>
+        <div class="footer">
+            Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">kentxchang</a>
+        </div>
+    </div>
+
+    <script>
+        async function generateLinks() {
+            const title = document.getElementById('titleInput').value;
+            const lessons = document.getElementById('lessonsInput').value.split('\n');
+            const characters = document.getElementById('charactersInput').value.split('\n');
+            const selectedWebsite = document.getElementById('websiteSelector').value;
+            const maxPerRow = 4;
+
+            const resultsWindow = window.open('', '_blank');
+            resultsWindow.document.title = title;
+            resultsWindow.document.write('<style>body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; position:relative; background-color: #f3e5f5; } table { width: 100%; margin:auto; border-collapse: collapse; } th, td { border: 2pt solid #ba68c8; padding: 10px; text-align: center; background: #e1bee7; } button { margin-top: 20px; }</style>');
+            resultsWindow.document.write(`<h1 style="text-align: center; font-size: 24px; color: #6a1b9a;">${title}</h1>`);
+            resultsWindow.document.write('<table>');
+
+            for (let rowStart = 0; rowStart < lessons.length; rowStart += maxPerRow) {
+                resultsWindow.document.write('<tr>');
+                for (let j = rowStart; j < Math.min(rowStart + maxPerRow, lessons.length); j++) {
+                    resultsWindow.document.write(`<th>${lessons[j]}</th>`);
+                }
+                resultsWindow.document.write('</tr><tr>');
+                for (let j = rowStart; j < Math.min(rowStart + maxPerRow, lessons.length); j++) {
+                    if (characters[j]) {
+                        const urlToUse = selectedWebsite ? selectedWebsite + encodeURIComponent(characters[j]) : characters[j];
+                        const qrCodeURL = urlToUse ? `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(urlToUse)}` : '';
+                        resultsWindow.document.write(`<td><img src="${qrCodeURL}" alt="QR Code" style="margin: auto; display:block;"></td>`);
+                    } else {
+                        resultsWindow.document.write('<td></td>');
+                    }
+                }
+                resultsWindow.document.write('</tr><tr>');
+                for (let j = rowStart; j < Math.min(rowStart + maxPerRow, lessons.length); j++) {
+                    if (characters[j]) {
+                        const urlToUse = selectedWebsite ? selectedWebsite + encodeURIComponent(characters[j]) : characters[j];
+                        const shortURL = urlToUse ? await getShortURL(urlToUse) : '#';
+                        resultsWindow.document.write(`<td><a href="${shortURL}" target="_blank">${shortURL}</a></td>`);
+                    } else {
+                        resultsWindow.document.write('<td></td>');
+                    }
+                }
+                resultsWindow.document.write('</tr>');
+            }
+            resultsWindow.document.write('</table>');
+            resultsWindow.document.write('<button onclick="downloadPage()">下載結果網頁</button>'); // Button to download the result page
+            resultsWindow.document.write('<div class="footer">Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">kentxchang</a></div>');
+            resultsWindow.document.write('<script>function downloadPage() { var blob = new Blob([document.documentElement.outerHTML], {type: "text/html"}); var url = URL.createObjectURL(blob); var a = document.createElement("a"); a.href = url; a.download = "Generated_Page.html"; a.click(); }<\/script>');
+        }
+
+        async function getShortURL(url) {
+            try {
+                const response = await axios.get(`https://tinyurl.com/api-create.php?url=${url}`);
+                return response.data;
+            } catch (error) {
+                console.error('Error generating short URL:', error);
+                return url; // Return the original URL if the short URL generation fails
+            }
+        }
+    </script>
+</body>
+</html>

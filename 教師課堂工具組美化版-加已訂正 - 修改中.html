@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教師課堂管理整合工具</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(to right, #ffecd2, #fcb69f);
+        }
+        h1 {
+            margin: 0;
+            padding: 20px 0;
+            color: #fff;
+            text-shadow: 2px 2px 4px #000;
+        }
+        #header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            box-sizing: border-box;
+        }
+        #calendar {
+            width: 100%;
+            max-width: 1200px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+            box-sizing: border-box;
+            margin-bottom: 100px; /* 新增的空白區域 */
+        }
+        #calendarHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            box-sizing: border-box;
+        }
+        #calendarMonth {
+            font-size: 2em;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+            text-align: center;
+            width: 100%;
+        }
+        #calendarDays {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr); /* 7 days + 1 for weekly summary */
+            gap: 5px;
+            text-align: center;
+            color: #333;
+            max-width: 1200px; /* 設定固定寬度 */
+            margin-top: 5px; /* 向下移動5px */
+        }
+        .calendarDay {
+            width: 135px; /* 設定單元格固定寬度 */
+            height: 120px; /* 設定單元格固定高度 */
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: center;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .calendarHeaderDay {
+            font-weight: bold;
+            font-size: 1.25em;
+            text-align: center;
+        }
+        .calendarDay:nth-child(8n+1), .calendarDay:nth-child(8n+7) {
+            background-color: #FFFFE0;
+        }
+        .calendarDay:nth-child(8n+8) {
+            background-color: #FFE4B5;
+        }
+        .today {
+            font-size: 24px;
+            color: red;
+            font-weight: bold;
+        }
+        .hasData {
+            background-color: #add8e6;
+        }
+        #studentNamesInput {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            z-index: 1000;
+        }
+        #studentNamesInput h3, #studentNamesInput textarea, #studentNamesInput button {
+            margin-bottom: 10px;
+        }
+        #studentNamesInputOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        #usageInstructionsOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+        #usageInstructions {
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            text-align: left;
+            position: relative;
+        }
+        #usageInstructions h3, #usageInstructions p {
+            margin-bottom: 10px;
+        }
+        #usageInstructions button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        #inputSection {
+            display: none;
+            width: 100%;
+            text-align: center;
+        }
+        #checklistSection {
+            display: none;
+            width: 100%;
+            text-align: center;
+        }
+        textarea {
+            width: 80%;
+            height: 150px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            color: black;
+            margin: 5px;
+            transition: background-color 0.3s ease, transform 0.2s;
+            background-color: #d8bfd8;
+        }
+        button:hover {
+            transform: scale(1.05);
+            background-color: #c8a2c8;
+        }
+        .resetButton {
+            background-color: #f44336;
+            color: white;
+        }
+        .resetButton:hover {
+            background-color: #d32f2f;
+        }
+        .monthlySummaryButton {
+            background-color: #4caf50;
+            color: white;
+        }
+        .monthlySummaryButton:hover {
+            background-color: #388e3c;
+        }
+        .scoreTable {
+            margin-top: 20px;
+            border-collapse: collapse;
+            display: inline-block;
+            vertical-align: top;
+            margin-right: 20px;
+            background-color: white;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .scoreTable, .scoreTable th, .scoreTable td {
+            border: 1px solid #ddd;
+        }
+        .scoreTable th, .scoreTable td {
+            padding: 8px;
+            text-align: center;
+        }
+        .scoreTable td button {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .highlight {
+            font-weight: bold;
+            color: red;
+        }
+        #chart {
+            margin-top: 20px;
+            width: 1000px;
+        }
+        #controlSection {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #footer {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 14px;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+        }
+        #footer a {
+            color: #fff;
+            text-decoration: none;
+        }
+        #footer a:hover {
+            text-decoration: underline;
+        }
+        .batchControl {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .batchControl input {
+            margin: 0 10px;
+            padding: 5px;
+            font-size: 16px;
+            width: 60px;
+            text-align: center;
+        }
+        #selectedDate {
+            margin-top: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+        }
+        .weekSummaryButton {
+            font-size: 13px;
+            color: black;
+            background-color: #add8e6;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            display: flex; /* 新增 */
+            align-items: center; /* 新增 */
+            justify-content: center; /* 新增 */
+            height: 100%; /* 新增 */
+            width: 100%; /* 新增 */
+        }
+        .weekSummaryButton:hover {
+            background-color: #87ceeb;
+        }
+        #weeklySummaryOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        #weeklySummaryContent {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        .control-buttons button {
+            flex: 1;
+        }
+        .control-buttons button:first-child {
+            margin-right: auto;
+            background-color: #4caf50;
+            color: white;
+        }
+        .control-buttons button:nth-child(2) {
+            background-color: #2196f3;
+            color: white;
+        }
+        .control-buttons button:last-child {
+            margin-left: auto;
+            background-color: #ff9800;
+            color: white;
+        }
+        .bottom-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .additionalText {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            background-color: transparent;
+            font-size: 25px;
+            color: red;
+        }
+        .additionalText button {
+            cursor: pointer;
+            padding: 5px; /* 修改按鈕大小 */
+            margin: 2px;
+            border: none;
+            background-color: #d8f3dc;
+            font-size: 15px;
+            color: red;
+            font-weight: bold;
+            border-radius: 50%; /* 圓形按鈕 */
+            width: 30px; /* 固定按鈕寬度 */
+            height: 30px; /* 固定按鈕高度 */
+        }
+        .additionalText button:hover {
+            background-color: #c2e7c7;
+        }
+        .additionalText .homeworkButton {
+            background-color: blue;
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+        }
+        .additionalText .hide {
+            display: none; /* 隱藏"聯"、"檢"按鈕 */
+        }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .overlayContent {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0px 0px 10px black;
+            font-weight: bold;
+            color: black;
+        }
+        .overlayContent h3 {
+            margin: 0 0 10px;
+            font-size: 20px;
+            color: blue;
+            text-shadow: 1px 1px 2px black;
+        }
+        .overlayContent .homeworkContent {
+            font-size: 100px;
+            text-align: left;
+            color: blue;
+            list-style-type: none;
+            padding: 0;
+            text-shadow: 2px 2px 5px black;
+            white-space: nowrap;
+        }
+        .overlayContent button {
+            padding: 10px 20px;
+        }
+        .hidden {
+            display: none;
+        }
+        .assignmentList {
+            text-align: left;
+            font-size: 100px;
+            color: blue;
+            list-style-type: none;
+            padding: 0;
+        }
+        .status-table {
+            width: 48%;
+            margin: 1%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+        .status-table th, .status-table td {
+            border: 1px solid #000;
+            padding: 10px;
+            text-align: center;
+            color: black;
+            font-weight: bold;
+        }
+        .status-table th:nth-child(2), .status-table td:nth-child(2) {
+            width: 33.33%;
+        }
+        .status-table th:nth-child(3), .status-table td:nth-child(3) {
+            width: 33.33%;
+        }
+        .status-table th:nth-child(4), .status-table td:nth-child(4) {
+            width: 33.33%;
+        }
+        .status-table td {
+            color: initial;
+        }
+        @media print {
+            @page {
+                size: landscape;
+            }
+            body {
+                -webkit-print-color-adjust: exact;
+            }
+        }
+        /* 新增的樣式 */
+        #tables-container table, #tables-container th, #tables-container td {
+            width: 90px;
+            height: 15px;
+            border: 1px solid #000;
+        }
+        #tables-container th, #tables-container td {
+            padding: 0;
+            text-align: center;
+            text-shadow: 2px 2px 4px #aaa;
+            background-color: white;
+        }
+        #tables-container th {
+            font-weight: bold;
+        }
+        .status-button {
+            width: 100%;
+            height: 100%;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px #aaa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: initial;
+        }
+        .status-toggle-button {
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #9370DB;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-shadow: 2px 2px 4px #aaa;
+            display: block;
+        }
+        .status-toggle-button:hover {
+            background-color: #7B68EE;
+        }
+        .export-button {
+            background-color: #008CBA;
+            color: white;
+            font-size: 16px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .export-button:hover {
+            background-color: #005f73;
+        }
+        .highlight {
+            background-color: #ADD8E6;
+        }
+        .tables-container-wrapper {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .import-button, .export-button-main {
+            background-color: #d8bfd8;
+            color: black;
+            font-size: 12px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .import-button:hover, .export-button-main:hover {
+            background-color: #c8a2c8;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <button class="resetButton" onclick="confirmReset()">重置</button>
+        <h1>教師課堂管理整合工具</h1>
+        <div>
+            <button onclick="showStudentNamesInput()">輸入學生姓名</button>
+            <button onclick="showUsageInstructions()">使用說明</button>
+        </div>
+    </div>
+
+    <div id="calendar">
+        <div id="calendarHeader">
+            <button onclick="changeMonth(-1)">上一個月</button>
+            <h2 id="calendarMonth"></h2>
+            <button class="monthlySummaryButton" onclick="showMonthlySummary()">每月統計</button>
+            <button onclick="changeMonth(1)">下一個月</button>
+        </div>
+        <div id="calendarDays">
+            <div class="calendarHeaderDay">日</div>
+            <div class="calendarHeaderDay">一</div>
+            <div class="calendarHeaderDay">二</div>
+            <div class="calendarHeaderDay">三</div>
+            <div class="calendarHeaderDay">四</div>
+            <div class="calendarHeaderDay">五</div>
+            <div class="calendarHeaderDay">六</div>
+            <div class="calendarHeaderDay">統計</div>
+        </div>
+    </div>
+    
+    <div id="studentNamesInputOverlay" onclick="hideStudentNamesInput()"></div>
+    <div id="studentNamesInput">
+        <h3>輸入學生姓名，每一行一個名字</h3>
+        <textarea id="studentNames" placeholder="每行輸入一個學生姓名"></textarea><br>
+        <button onclick="submitNames()">送出</button>
+    </div>
+
+    <div id="usageInstructionsOverlay" onclick="hideUsageInstructions()">
+        <div id="usageInstructions" onclick="event.stopPropagation()">
+            <button onclick="hideUsageInstructions()">關閉</button>
+            <h3>使用說明</h3>
+            <p><b>輸入學生姓名:</b> 點擊此按鈕可以輸入或修改學生姓名，每行輸入一個名字。</p>
+            <p><b>重置:</b> 點擊此按鈕將重置所有數據，包括學生姓名、分數和作業。</p>
+            <p><b>每月統計:</b> 點擊此按鈕可以查看當前月份的統計數據。</p>
+            <p><b>每週統計:</b> 在日曆上，每週的統計按鈕會顯示當週的統計數據。</p>
+            <p><b>作業按鈕:</b> 在每個日期單元格內，點擊“作”按鈕可以輸入當天的作業，輸入後，“聯”和“檢”按鈕會顯示。</p>
+            <p><b>作業狀態:</b> 點擊“檢”按鈕可以查看和更新學生的作業完成狀態。</p>
+            <p><b>加扣分:</b> 點擊日期後，可以對學生進行加扣分，並查看分數表和統計圖。</p>
+            <p><b>匯出/匯入:</b> 點擊匯出按鈕可以下載數據，點擊匯入按鈕可以上傳之前下載的數據。</p>
+        </div>
+    </div>
+    
+    <div id="inputSection">
+        <div id="controlSection" class="control-buttons">
+            <button onclick="goBack()">回上一頁</button>
+            <button onclick="showScoreSection()">加扣分</button>
+            <button onclick="showChartSection()">呈現直條圖</button>
+        </div>
+        <div id="selectedDate"></div>
+        <div id="scoreSection" class="centered-section"></div>
+        <div id="chartSection">
+            <canvas id="chart"></canvas>
+        </div>
+    </div>
+
+    <div id="checklistSection">
+        <div class="control-buttons">
+            <button onclick="saveAndBack()">回上一頁</button>
+            <button class="status-toggle-button" onclick="toggleStatusTables()">作業狀態</button>
+            <button class="export-button" onclick="exportImage()">匯出圖片</button>
+        </div>
+        <h3 id="checklistDate"></h3>
+        <div id="statusContainer" style="display: none; flex-wrap: wrap; justify-content: space-between; background-color: white;"></div>
+        <div class="tables-container-wrapper">
+            <div id="tablesContainer" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
+        </div>
+    </div>
+
+    <div id="weeklySummaryOverlay" onclick="hideWeeklySummary()">
+        <div id="weeklySummaryContent" onclick="event.stopPropagation()">
+            <h2>統計</h2>
+            <div id="weeklyScoreSection"></div>
+            <canvas id="weeklyChart"></canvas>
+        </div>
+    </div>
+
+    <div id="footer">
+        Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">阿剛老師</a>
+    </div>
+
+    <div id="homeworkOverlay" class="overlay" onclick="hideOverlay(event, 'homeworkOverlay')">
+        <div class="overlayContent" onclick="event.stopPropagation()">
+            <h3 id="homeworkDate"></h3>
+            <textarea id="homeworkText" placeholder="每行輸入一項作業"></textarea><br>
+            <button onclick="submitHomework()">送出</button>
+        </div>
+    </div>
+
+    <div id="viewHomeworkOverlay" class="overlay" onclick="hideOverlay(event, 'viewHomeworkOverlay')">
+        <div class="overlayContent" onclick="event.stopPropagation()">
+            <ul id="assignmentList" class="homeworkContent"></ul>
+            <h3 id="viewHomeworkDate"></h3>
+        </div>
+    </div>
+
+    <div style="position: fixed; bottom: 10px; left: 10px;" id="importExportButtons">
+        <button class="export-button-main" onclick="exportData()">匯出</button>
+        <input type="file" id="importFile" style="display: none;" onchange="importData(event)">
+        <button class="import-button" onclick="document.getElementById('importFile').click()">匯入</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas"></script>
+    <script>
+        const backgroundColors = ['#FFFACD', '#FFDAB9', '#E6E6FA', '#E0FFFF', '#F0E68C'];
+        document.body.style.backgroundColor = backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
+
+        let students = JSON.parse(localStorage.getItem('students')) || [];
+        let scores = JSON.parse(localStorage.getItem('scores')) || {};
+        let homeworks = JSON.parse(localStorage.getItem('homeworks')) || {};
+        let chart;
+        let weeklyChart;
+        let currentMonth = new Date();
+        let currentDay = null;
+        let scoresChanged = false;
+
+        document.getElementById('calendar').style.display = 'block';
+        document.getElementById('header').style.display = 'flex';
+        document.getElementById('importExportButtons').style.display = 'block';
+        renderCalendar();
+
+        function showStudentNamesInput() {
+            document.getElementById('studentNamesInput').style.display = 'block';
+            document.getElementById('studentNamesInputOverlay').style.display = 'block';
+        }
+
+        function hideStudentNamesInput() {
+            document.getElementById('studentNamesInput').style.display = 'none';
+            document.getElementById('studentNamesInputOverlay').style.display = 'none';
+        }
+
+        function showUsageInstructions() {
+            document.getElementById('usageInstructionsOverlay').style.display = 'flex';
+        }
+
+        function hideUsageInstructions() {
+            document.getElementById('usageInstructionsOverlay').style.display = 'none';
+        }
+
+        function submitNames() {
+            const names = document.getElementById('studentNames').value.trim().split('\n').map(name => name.trim());
+            names.forEach(name => {
+                if (!students.includes(name) && name !== '') {
+                    students.push(name);
+                }
+            });
+            localStorage.setItem('students', JSON.stringify(students));
+            hideStudentNamesInput();
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const calendarDays = document.getElementById('calendarDays');
+            calendarDays.innerHTML = `
+                <div class="calendarHeaderDay">日</div>
+                <div class="calendarHeaderDay">一</div>
+                <div class="calendarHeaderDay">二</div>
+                <div class="calendarHeaderDay">三</div>
+                <div class="calendarHeaderDay">四</div>
+                <div class="calendarHeaderDay">五</div>
+                <div class="calendarHeaderDay">六</div>
+                <div class="calendarHeaderDay">統計</div>
+            `;
+            const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+            const lastDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+            const firstDayIndex = firstDayOfMonth.getDay();
+            const lastDayIndex = lastDayOfMonth.getDay();
+            const prevLastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 0).getDate();
+            const lastDay = lastDayOfMonth.getDate();
+            const today = new Date();
+            let weekDayCount = 0;
+
+            document.getElementById('calendarMonth').textContent = currentMonth.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long' });
+
+            for (let i = firstDayIndex; i > 0; i--) {
+                const day = document.createElement('div');
+                day.classList.add('calendarDay');
+                day.classList.add('prevMonthDay');
+                day.textContent = prevLastDay - i + 1;
+                calendarDays.appendChild(day);
+                weekDayCount++;
+            }
+
+            for (let i = 1; i <= lastDay; i++) {
+                const day = document.createElement('div');
+                day.classList.add('calendarDay');
+                const dateKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth() + 1}-${i}`;
+                day.innerHTML = `<div onclick="showDailyScoreSection(${i})">${i}</div>
+                                <div class="additionalText">
+                                    <button class="homeworkButton" onclick="showHomeworkOverlay(event, '${dateKey}')">作</button>
+                                    <button class="hide" onclick="showViewHomeworkOverlay(event, '${dateKey}')">聯</button>
+                                    <button class="hide" onclick="showChecklistSection('${dateKey}')">檢</button>
+                                </div>`;
+                if (today.getFullYear() === currentMonth.getFullYear() && 
+                    today.getMonth() === currentMonth.getMonth() && 
+                    today.getDate() === i) {
+                    day.classList.add('today');
+                }
+                if (homeworks[dateKey]) {
+                    day.querySelector(".homeworkButton").nextElementSibling.classList.remove('hide');
+                    day.querySelector(".homeworkButton").nextElementSibling.nextElementSibling.classList.remove('hide');
+                }
+                if (scores[dateKey]) {
+                    day.classList.add('hasData');
+                }
+                calendarDays.appendChild(day);
+                weekDayCount++;
+                if (weekDayCount === 7) {
+                    const weekSummary = document.createElement('div');
+                    weekSummary.classList.add('calendarDay');
+                    weekSummary.innerHTML = `<button class="weekSummaryButton" onclick="showWeeklySummary(${i - 6}, ${i})">每週\n統計</button>`;
+                    calendarDays.appendChild(weekSummary);
+                    weekDayCount = 0;
+                }
+            }
+
+            for (let i = 1; i < 7 - lastDayIndex; i++) {
+                const day = document.createElement('div');
+                day.classList.add('calendarDay');
+                day.classList.add('nextMonthDay');
+                day.textContent = i;
+                calendarDays.appendChild(day);
+                weekDayCount++;
+                if (weekDayCount === 7) {
+                    const weekSummary = document.createElement('div');
+                    weekSummary.classList.add('calendarDay');
+                    weekSummary.innerHTML = `<button class="weekSummaryButton" onclick="showWeeklySummary(${lastDay + i - 6}, ${lastDay + i})">每週\n統計</button>`;
+                    calendarDays.appendChild(weekSummary);
+                    weekDayCount = 0;
+                }
+            }
+        }
+
+        function changeMonth(months) {
+            currentMonth.setMonth(currentMonth.getMonth() + months);
+            renderCalendar();
+        }
+
+        function showDailyScoreSection(day) {
+            currentDay = day;
+            scoresChanged = false;
+            document.getElementById('selectedDate').textContent = `日期: ${currentMonth.getFullYear()}${(currentMonth.getMonth() + 1).toString().padStart(2, '0')}${day.toString().padStart(2, '0')}`;
+            document.getElementById('calendar').style.display = 'none';
+            document.getElementById('header').style.display = 'none';
+            document.getElementById('importExportButtons').style.display = 'none';
+            document.getElementById('inputSection').style.display = 'block';
+            document.getElementById('controlSection').style.display = 'flex';
+            updateScoreTables();
+            showScoreSection();
+        }
+
+        function showScoreSection() {
+            document.getElementById('scoreSection').style.display = 'block';
+            document.getElementById('chartSection').style.display = 'none';
+        }
+
+        function showChartSection() {
+            document.getElementById('scoreSection').style.display = 'none';
+            document.getElementById('chartSection').style.display = 'block';
+            renderChart();
+        }
+
+        function goBack() {
+            if (scoresChanged) {
+                const dateKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth() + 1}-${currentDay}`;
+                const dayElement = [...document.getElementsByClassName('calendarDay')].find(day => day.innerHTML.includes(`showDailyScoreSection(${currentDay})`));
+                if (dayElement) {
+                    dayElement.classList.add('hasData');
+                }
+            }
+            document.getElementById('inputSection').style.display = 'none';
+            document.getElementById('checklistSection').style.display = 'none';
+            document.getElementById('calendar').style.display = 'block';
+            document.getElementById('header').style.display = 'flex';
+            document.getElementById('importExportButtons').style.display = 'block';
+        }
+
+        function updateScoreTables() {
+            const scoreSection = document.getElementById('scoreSection');
+            scoreSection.innerHTML = '';
+            let currentTable = createScoreTable();
+            scoreSection.appendChild(currentTable);
+            students.forEach((name, index) => {
+                if (index % 10 === 0 && index !== 0) {
+                    currentTable = createScoreTable();
+                    scoreSection.appendChild(currentTable);
+                }
+                addRowToTable(currentTable, name, index);
+            });
+            highlightTopScore();
+        }
+
+        function createScoreTable() {
+            const table = document.createElement('table');
+            table.className = 'scoreTable';
+            const thead = table.createTHead();
+            const row = thead.insertRow();
+            const thName = document.createElement('th');
+            const thAdd = document.createElement('th');
+            const thScore = document.createElement('th');
+            const thSubtract = document.createElement('th');
+            thName.textContent = '姓名';
+            thAdd.textContent = '加分';
+            thScore.textContent = '得分';
+            thSubtract.textContent = '扣分';
+            row.appendChild(thName);
+            row.appendChild(thAdd);
+            row.appendChild(thScore);
+            row.appendChild(thSubtract);
+            table.createTBody();
+            return table;
+        }
+
+        function addRowToTable(table, name, index) {
+            const tbody = table.getElementsByTagName('tbody')[0];
+            const row = tbody.insertRow();
+            const cellName = row.insertCell(0);
+            const cellAdd = row.insertCell(1);
+            const cellScore = row.insertCell(2);
+            const cellSubtract = row.insertCell(3);
+
+            cellName.textContent = name;
+            cellAdd.innerHTML = `<button onclick="changeScore('${name}-${index}', 1)">+</button>`;
+            const dateKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth() + 1}-${currentDay}`;
+            if (!scores[dateKey]) {
+                scores[dateKey] = {};
+            }
+            cellScore.textContent = scores[dateKey][`${name}-${index}`] || 0;
+            cellSubtract.innerHTML = `<button onclick="changeScore('${name}-${index}', -1)">-</button>`;
+        }
+
+        function changeScore(key, delta) {
+            const dateKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth() + 1}-${currentDay}`;
+            if (!scores[dateKey]) {
+                scores[dateKey] = {};
+            }
+            scores[dateKey][key] = (scores[dateKey][key] || 0) + delta;
+            localStorage.setItem('scores', JSON.stringify(scores));
+            updateScoreTables();
+            scoresChanged = true;
+        }
+
+        function highlightTopScore() {
+            const dateKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth() + 1}-${currentDay}`;
+            if (!scores[dateKey]) return;
+            const maxScore = Math.max(...Object.values(scores[dateKey]));
+            const cells = document.querySelectorAll('.scoreTable td:nth-child(3)');
+            cells.forEach(cell => {
+                cell.classList.remove('highlight');
+                if (parseInt(cell.textContent) === maxScore) {
+                    cell.classList.add('highlight');
+                }
+            });
+        }
+
+        function renderChart() {
+            const dateKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth() + 1}-${currentDay}`;
+            const ctx = document.getElementById('chart').getContext('2d');
+            if (chart) {
+                chart.destroy();
+            }
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: students,
+                    datasets: [{
+                        label: '得分',
+                        data: students.map((name, index) => scores[dateKey] ? (scores[dateKey][`${name}-${index}`] || 0) : 0),
+                        backgroundColor: students.map((name, index) => scores[dateKey] && (scores[dateKey][`${name}-${index}`] === Math.max(...Object.values(scores[dateKey])) ? 'darkblue' : 'rgba(54, 162, 235, 0.2)')),
+                        borderColor: students.map((name, index) => scores[dateKey] && (scores[dateKey][`${name}-${index}`] === Math.max(...Object.values(scores[dateKey])) ? 'darkblue' : 'rgba(54, 162, 235, 1)')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: students.length <= 6 ? 0 : 90,
+                                minRotation: 0,
+                                font: function(context) {
+                                    const width = context.chart.width;
+                                    const size = students.length <= 6 ? 14 : Math.round(width / students.length / 1.5);
+                                    return {
+                                        size: size > 8 ? size : 8,
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function confirmReset() {
+            if (confirm("確定要重置所有資料嗎？")) {
+                localStorage.removeItem('students');
+                localStorage.removeItem('scores');
+                localStorage.removeItem('homeworks');
+                students = [];
+                scores = {};
+                homeworks = {};
+                document.getElementById('calendar').style.display = 'block';
+                document.getElementById('inputSection').style.display = 'none';
+                document.getElementById('checklistSection').style.display = 'none';
+                document.getElementById('studentNamesInput').style.display = 'none';
+                document.getElementById('header').style.display = 'flex';
+                document.getElementById('importExportButtons').style.display = 'block';
+                renderCalendar();
+            }
+        }
+
+        function showWeeklySummary(startDay, endDay) {
+            const summaryData = {};
+            for (let i = startDay; i <= endDay; i++) {
+                const dateKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth() + 1}-${i}`;
+                if (scores[dateKey]) {
+                    Object.keys(scores[dateKey]).forEach(key => {
+                        summaryData[key] = (summaryData[key] || 0) + scores[dateKey][key];
+                    });
+                }
+            }
+
+            document.getElementById('weeklySummaryOverlay').style.display = 'flex';
+
+            const weeklyScoreSection = document.getElementById('weeklyScoreSection');
+            weeklyScoreSection.innerHTML = '';
+            let currentTable = createWeeklySummaryTable();
+            weeklyScoreSection.appendChild(currentTable);
+            const maxScore = Math.max(...Object.values(summaryData));
+            students.forEach((name, index) => {
+                if (index % 10 === 0 && index !== 0) {
+                    currentTable = createWeeklySummaryTable();
+                    weeklyScoreSection.appendChild(currentTable);
+                }
+                addSummaryRowToTable(currentTable, name, index, summaryData, maxScore);
+            });
+            renderSummaryChart(summaryData);
+        }
+
+        function showMonthlySummary() {
+            const summaryData = {};
+            const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+            for (let i = 1; i <= lastDay; i++) {
+                const dateKey = `${currentMonth.getFullYear()}-${currentMonth.getMonth() + 1}-${i}`;
+                if (scores[dateKey]) {
+                    Object.keys(scores[dateKey]).forEach(key => {
+                        summaryData[key] = (summaryData[key] || 0) + scores[dateKey][key];
+                    });
+                }
+            }
+
+            document.getElementById('weeklySummaryOverlay').style.display = 'flex';
+
+            const weeklyScoreSection = document.getElementById('weeklyScoreSection');
+            weeklyScoreSection.innerHTML = '';
+            let currentTable = createWeeklySummaryTable();
+            weeklyScoreSection.appendChild(currentTable);
+            const maxScore = Math.max(...Object.values(summaryData));
+            students.forEach((name, index) => {
+                if (index % 10 === 0 && index !== 0) {
+                    currentTable = createWeeklySummaryTable();
+                    weeklyScoreSection.appendChild(currentTable);
+                }
+                addSummaryRowToTable(currentTable, name, index, summaryData, maxScore);
+            });
+            renderSummaryChart(summaryData);
+        }
+
+        function createWeeklySummaryTable() {
+            const table = document.createElement('table');
+            table.className = 'scoreTable';
+            const thead = table.createTHead();
+            const row = thead.insertRow();
+            const thName = document.createElement('th');
+            const thScore = document.createElement('th');
+            thName.textContent = '姓名';
+            thScore.textContent = '得分';
+            row.appendChild(thName);
+            row.appendChild(thScore);
+            table.createTBody();
+            return table;
+        }
+
+        function addSummaryRowToTable(table, name, index, summaryData, maxScore) {
+            const tbody = table.getElementsByTagName('tbody')[0];
+            const row = tbody.insertRow();
+            const cellName = row.insertCell(0);
+            const cellScore = row.insertCell(1);
+
+            cellName.textContent = name;
+            cellScore.textContent = summaryData[`${name}-${index}`] || 0;
+
+            if (summaryData[`${name}-${index}`] === maxScore) {
+                cellName.style.fontWeight = 'bold';
+                cellName.style.color = 'red';
+            }
+        }
+
+        function renderSummaryChart(summaryData) {
+            const ctx = document.getElementById('weeklyChart').getContext('2d');
+            if (weeklyChart) {
+                weeklyChart.destroy();
+            }
+            weeklyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: students,
+                    datasets: [{
+                        label: '得分',
+                        data: students.map((name, index) => summaryData[`${name}-${index}`] || 0),
+                        backgroundColor: students.map((name, index) => summaryData[`${name}-${index}`] === Math.max(...Object.values(summaryData)) ? 'darkblue' : 'rgba(54, 162, 235, 0.2)'),
+                        borderColor: students.map((name, index) => summaryData[`${name}-${index}`] === Math.max(...Object.values(summaryData)) ? 'darkblue' : 'rgba(54, 162, 235, 1)'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: students.length <= 6 ? 0 : 90,
+                                minRotation: 0,
+                                font: function(context) {
+                                    const width = context.chart.width;
+                                    const size = students.length <= 6 ? 14 : Math.round(width / students.length / 1.5);
+                                    return {
+                                        size: size > 8 ? size : 8,
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function hideWeeklySummary() {
+            document.getElementById('weeklySummaryOverlay').style.display = 'none';
+        }
+
+        function showHomeworkOverlay(event, dateKey) {
+            event.stopPropagation();
+            document.getElementById('homeworkOverlay').style.display = 'flex';
+            document.getElementById('homeworkDate').textContent = new Date(dateKey).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('homeworkDate').dataset.dateKey = dateKey;
+            document.getElementById('homeworkText').value = homeworks[dateKey] ? homeworks[dateKey].join('\n') : '';
+        }
+
+        function hideOverlay(event, overlayId) {
+            event.stopPropagation();
+            document.getElementById(overlayId).style.display = 'none';
+        }
+
+        function submitHomework() {
+            const dateKey = document.getElementById('homeworkDate').dataset.dateKey;
+            const homeworkText = document.getElementById('homeworkText').value.trim();
+            if (homeworkText) {
+                homeworks[dateKey] = homeworkText.split('\n').map(item => item.trim()).filter(item => item);
+                localStorage.setItem('homeworks', JSON.stringify(homeworks));
+                const dayElement = document.querySelector(`.calendarDay button[onclick*="showHomeworkOverlay(event, '${dateKey}')"]`).parentNode;
+                dayElement.querySelector('.hide').classList.remove('hide');
+                dayElement.querySelectorAll('button')[2].classList.remove('hide');
+            }
+            hideOverlay(event, 'homeworkOverlay');
+        }
+
+        function showViewHomeworkOverlay(event, dateKey) {
+            event.stopPropagation();
+            const homeworkList = homeworks[dateKey] || [];
+            document.getElementById('viewHomeworkOverlay').style.display = 'flex';
+            document.getElementById('viewHomeworkDate').textContent = new Date(dateKey).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('assignmentList').innerHTML = homeworkList.map((item, index) => `<li>${index + 1}. ${item}</li>`).join('');
+        }
+
+        function showChecklistSection(dateKey) {
+            const storedData = JSON.parse(localStorage.getItem(`checklist_${dateKey}`)) || {};
+            const homeworkList = homeworks[dateKey] || [];
+            document.getElementById('checklistDate').textContent = new Date(dateKey).toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('checklistDate').dataset.dateKey = dateKey;
+            document.getElementById('statusContainer').innerHTML = generateStatusTables(homeworkList);
+            document.getElementById('tablesContainer').innerHTML = generateChecklistTables(homeworkList, storedData);
+            document.getElementById('calendar').style.display = 'none';
+            document.getElementById('header').style.display = 'none';
+            document.getElementById('checklistSection').style.display = 'block';
+            document.getElementById('importExportButtons').style.display = 'none';
+            updateStatusLists();
+        }
+
+        function generateStatusTables(cols) {
+            let tables = '';
+            cols.forEach((col, index) => {
+                if (col.trim() !== '') {
+                    tables += `
+                        <table class="status-table" style="background-color: ${backgroundColors[index % backgroundColors.length]};">
+                            <thead>
+                                <tr>
+                                    <th>${col}</th>
+                                    <th>未繳交</th>
+                                    <th>待訂正</th>
+                                    <th>已訂正</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td></td>
+                                    <td id="not-submitted-${col.trim()}"></td>
+                                    <td id="correction-${col.trim()}"></td>
+                                    <td id="corrected-${col.trim()}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    `;
+                }
+            });
+            return tables;
+        }
+
+        function generateChecklistTables(cols, storedData) {
+            let tables = '';
+            const chunkSize = 15;
+            for (let i = 0; i < students.length; i += chunkSize) {
+                tables += `
+                    <table style="table-layout: fixed; margin: 10px; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th class="student-name" style="width: 90px; height: 15px; background-color: white; font-weight: bold;" onclick="toggleStudentStatus(${i})">學生姓名</th>
+                                ${cols.map(col => col.trim() !== '' ? `<th style="width: 90px; height: 15px; background-color: white;" onclick="toggleAssignmentStatus('${col.trim()}')">${col}</th>` : '').join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${generateChecklistRows(cols, i, i + chunkSize, storedData)}
+                        </tbody>
+                    </table>
+                `;
+            }
+            return tables;
+        }
+
+        function generateChecklistRows(cols, start, end, storedData) {
+            let rows = '';
+            const chunk = students.slice(start, end);
+            chunk.forEach((student, index) => {
+                let assignments = '';
+                for (let i = 0; i < cols.length; i++) {
+                    if (cols[i].trim() !== '') {
+                        const assignment = cols[i].trim();
+                        const status = storedData[assignment] && storedData[assignment][student] ? storedData[assignment][student] : 'red';
+                        const text = status === 'red' ? '未繳交' : status === 'green' ? '已繳交' : status === 'orange' ? '待訂正' : '已訂正';
+                        assignments += `
+                            <td style="width: 90px; height: 15px;">
+                                <button class="status-button" style="background-color: ${status}; color: white;" onclick="toggleButtonStatus(this, '${student}', '${assignment}')">${text}</button>
+                            </td>
+                        `;
+                    }
+                }
+                rows += `
+                    <tr>
+                        <td class="student-name" style="width: 90px; height: 15px; background-color: white; font-weight: bold;" onclick="toggleStudentStatus(${start + index})">${student}</td>
+                        ${assignments}
+                    </tr>
+                `;
+            });
+            return rows;
+        }
+
+        function toggleButtonStatus(button, student, assignment) {
+            if (button.style.backgroundColor === 'red') {
+                button.style.backgroundColor = 'green';
+                button.textContent = '已繳交';
+            } else if (button.style.backgroundColor === 'green') {
+                button.style.backgroundColor = 'orange';
+                button.textContent = '待訂正';
+            } else if (button.style.backgroundColor === 'orange') {
+                button.style.backgroundColor = 'blue';
+                button.textContent = '已訂正';
+            } else {
+                button.style.backgroundColor = 'red';
+                button.textContent = '未繳交';
+            }
+            updateStatusLists();
+        }
+
+        function toggleAssignmentStatus(assignment) {
+            const buttons = document.querySelectorAll(`button[onclick*="${assignment}"]`);
+            buttons.forEach(button => {
+                toggleButtonStatus(button, button.closest('tr').querySelector('.student-name').textContent, assignment);
+            });
+        }
+
+        function toggleStudentStatus(rowIndex) {
+            const row = document.querySelectorAll(`#tables-container tbody tr`)[rowIndex];
+            const buttons = row.querySelectorAll('.status-button');
+            buttons.forEach(button => {
+                const assignment = button.closest('table').querySelector('thead th:nth-child(' + (Array.from(button.closest('tr').children).indexOf(button.closest('td')) + 1) + ')').textContent.trim();
+                toggleButtonStatus(button, row.querySelector('.student-name').textContent, assignment);
+            });
+        }
+
+        function updateStatusLists() {
+            const notSubmittedLists = {};
+            const correctionLists = {};
+            const correctedLists = {};
+
+            document.querySelectorAll('.status-table th').forEach(th => {
+                const col = th.textContent.trim();
+                notSubmittedLists[col] = document.getElementById(`not-submitted-${col}`);
+                correctionLists[col] = document.getElementById(`correction-${col}`);
+                correctedLists[col] = document.getElementById(`corrected-${col}`);
+                if (notSubmittedLists[col]) notSubmittedLists[col].innerHTML = '';
+                if (correctionLists[col]) correctionLists[col].innerHTML = '';
+                if (correctedLists[col]) correctedLists[col].innerHTML = '';
+            });
+
+            const buttons = document.querySelectorAll('.status-button');
+            buttons.forEach(button => {
+                const student = button.closest('tr').querySelector('.student-name').textContent;
+                const assignment = button.closest('table').querySelector('thead th:nth-child(' + (Array.from(button.closest('tr').children).indexOf(button.closest('td')) + 1) + ')').textContent;
+
+                if (button.style.backgroundColor === 'red' && notSubmittedLists[assignment]) {
+                    notSubmittedLists[assignment].innerHTML += `${notSubmittedLists[assignment].innerHTML ? ', ' : ''}${student}`;
+                } else if (button.style.backgroundColor === 'orange' && correctionLists[assignment]) {
+                    correctionLists[assignment].innerHTML += `${correctionLists[assignment].innerHTML ? ', ' : ''}${student}`;
+                } else if (button.style.backgroundColor === 'blue' && correctedLists[assignment]) {
+                    correctedLists[assignment].innerHTML += `${correctedLists[assignment].innerHTML ? ', ' : ''}${student}`;
+                }
+            });
+        }
+
+        function saveAndBack() {
+            const dateKey = document.getElementById('checklistDate').dataset.dateKey;
+            const statusData = {};
+            const buttons = document.querySelectorAll('.status-button');
+            buttons.forEach(button => {
+                const student = button.closest('tr').querySelector('.student-name').textContent;
+                const assignment = button.closest('table').querySelector('thead th:nth-child(' + (Array.from(button.closest('tr').children).indexOf(button.closest('td')) + 1) + ')').textContent.trim();
+                if (!statusData[assignment]) statusData[assignment] = {};
+                statusData[assignment][student] = button.style.backgroundColor;
+            });
+            localStorage.setItem(`checklist_${dateKey}`, JSON.stringify(statusData));
+            goBack();
+        }
+
+        function toggleStatusTables() {
+            const statusContainer = document.getElementById('statusContainer');
+            if (statusContainer.style.display === 'none' || !statusContainer.style.display) {
+                statusContainer.style.display = 'flex';
+                updateStatusLists();
+            } else {
+                statusContainer.style.display = 'none';
+            }
+        }
+
+        function exportImage() {
+            const date = document.getElementById('checklistDate').textContent;
+            html2canvas(document.body).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `作業檢核表 - ${date}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        function exportData() {
+            const data = {
+                students,
+                scores,
+                homeworks
+            };
+            const dataStr = JSON.stringify(data);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = 'data.json';
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = JSON.parse(e.target.result);
+                students = data.students || [];
+                scores = data.scores || {};
+                homeworks = data.homeworks || {};
+                localStorage.setItem('students', JSON.stringify(students));
+                localStorage.setItem('scores', JSON.stringify(scores));
+                localStorage.setItem('homeworks', JSON.stringify(homeworks));
+                renderCalendar();
+            };
+            reader.readAsText(file);
+        }
+
+        window.onbeforeunload = function() {
+            localStorage.setItem('students', JSON.stringify(students));
+            localStorage.setItem('scores', JSON.stringify(scores));
+            localStorage.setItem('homeworks', JSON.stringify(homeworks));
+        };
+
+        window.onload = function() {
+            if (students.length > 0) {
+                renderCalendar();
+                renderChart();
+            }
+        };
+    </script>
+</body>
+</html>

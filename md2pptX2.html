@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown轉線上簡報工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #e0f7fa;
+            color: #01579b;
+            transition: background-color 1s;
+        }
+        #inputArea, #presentationArea {
+            width: 80%;
+            text-align: center;
+            margin: 20px 0;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            border: 2px solid #81d4fa;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: border 0.3s, box-shadow 0.3s;
+        }
+        textarea:focus {
+            border: 2px solid #29b6f6;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        button {
+            padding: 12px 24px;
+            margin: 10px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            color: #01579b;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            transition: background 0.3s, box-shadow 0.3s, transform 0.3s;
+        }
+        button:hover {
+            background: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .slide-container {
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            position: relative;
+            margin: auto;
+        }
+        .slide {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            padding: 20px;
+            box-sizing: border-box;
+            background: linear-gradient(to bottom, #ADD8E6, #90EE90);
+            transition: background-color 1s, color 1s;
+        }
+        .slide h1, .slide h2 {
+            margin: 0;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            color: white;
+        }
+        .slide h1 {
+            font-size: 4vw;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+        .slide h2 {
+            padding: 10px;
+            font-size: 4vw;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 1s;
+        }
+        .slide p {
+            margin: 10px 0;
+            width: 100%;
+            text-align: left;
+            font-size: calc(1vw + 1vh + 1vmin + 5px);
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+        }
+        .bold-text {
+            font-weight: bold;
+            color: yellow;
+            font-size: calc(1vw + 1vh + 1vmin + 13px);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        .orange-text {
+            font-weight: bold;
+            color: orange;
+            font-size: calc(1vw + 1vh + 1vmin + 13px);
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        .blue-text {
+            font-weight: bold;
+            color: blue;
+            font-size: calc(1vw + 1vh + 1vmin + 13px);
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        .navigation {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            padding: 10px;
+            cursor: pointer;
+            z-index: 10;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+        .prev {
+            left: 10px;
+        }
+        .next {
+            right: 10px;
+        }
+        #fullScreenBtn, #resetBtn, #instructionsBtn, #mindmapBtn, #saveSlidesBtn {
+            position: fixed;
+            top: 10px;
+        }
+        #fullScreenBtn {
+            right: 10px;
+        }
+        #resetBtn {
+            left: 10px;
+        }
+        #instructionsBtn {
+            left: 10px;
+            bottom: 10px;
+            top: auto;
+        }
+        #mindmapBtn {
+            bottom: auto;
+            top: 10px;
+            right: 150px;
+        }
+        #saveSlidesBtn {
+            left: 10px;
+            top: 80px;
+        }
+        .instructions-overlay, .mindmap-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+        }
+        .instructions-content, .mindmap-content {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            max-width: 600px;
+            text-align: left;
+        }
+        .color-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .color-buttons button {
+            margin: 0 5px;
+            color: white;
+            font-weight: bold;
+        }
+        .sunset { background: linear-gradient(to right, #ff7e5f, #feb47b); }
+        .forest { background: linear-gradient(to right, #a8e063, #56ab2f); }
+        .ocean { background: linear-gradient(to right, #00c6ff, #0072ff); }
+        .dusk { background: linear-gradient(to right, #2c3e50, #fd746c); }
+        .purple { background: linear-gradient(to right, #8e44ad, #c39bd3); }
+        .green { background: linear-gradient(to right, #28a745, #81c784); }
+        .red { background: linear-gradient(to right, #e74c3c, #e57373); }
+        .page-number {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 14px;
+        }
+        .slide-nav {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+        }
+        .slide-nav button {
+            background-color: rgba(0, 0, 0, 0.5);
+            border: none;
+            color: white;
+            font-size: 2em;
+            padding: 10px;
+            cursor: pointer;
+            pointer-events: all;
+            z-index: 10;
+        }
+        .slide-nav .prev-slide {
+            left: 0;
+        }
+        .slide-nav .next-slide {
+            right: 0;
+        }
+        .footer {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 14px;
+            color: #01579b;
+        }
+        .footer a {
+            color: #01579b;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div id="inputArea">
+        <h1>Markdown轉線上簡報工具</h1>
+        <textarea id="markdownInput" placeholder="先在chatgpt等ai工具上用markdown語法生成特定主題心智圖，再把生成的Markdown語法文字貼進來"></textarea>
+        <button onclick="convertToSlides()">轉換成簡報</button>
+        <button id="mindmapBtn" onclick="showMindmapInstructions()">AI生成心智圖參考指令</button>
+    </div>
+    <div id="presentationArea" style="display:none;">
+        <button id="fullScreenBtn" onclick="toggleFullScreen()">播放</button>
+        <button id="resetBtn" onclick="resetPresentation()">重置</button>
+        <button id="saveSlidesBtn" onclick="startSaveSlides()">匯出</button>
+        <button id="instructionsBtn" onclick="showInstructions()">使用說明</button>
+        <div class="slide-container">
+            <div id="slides"></div>
+        </div>
+        <div class="color-buttons">
+            <button class="sunset" onclick="changeColor('sunset')">落日余暉</button>
+            <button class="forest" onclick="changeColor('forest')">森林綠意</button>
+            <button class="ocean" onclick="changeColor('ocean')">海洋深藍</button>
+            <button class="dusk" onclick="changeColor('dusk')">黃昏暖光</button>
+            <button class="purple" onclick="changeColor('purple')">紫色夢幻</button>
+            <button class="green" onclick="changeColor('green')">翡翠綠洲</button>
+            <button class="red" onclick="changeColor('red')">火焰紅焰</button>
+        </div>
+    </div>
+    <div class="footer">
+        Designed by <a href="https://kentxchang.blogspot.tw" target="_blank">阿剛老師</a>
+    </div>
+    <div class="instructions-overlay" id="instructionsOverlay">
+        <div class="instructions-content">
+            <h2>使用說明</h2>
+            <p>以下是所有按鈕的快速鍵說明及如何開始進行簡報：</p>
+            <ul>
+                <li>按 <b>F</b> 鍵：全螢幕播放</li>
+                <li>按 <b>1-7</b> 鍵：切換配色</li>
+                <li>按 <b>方向鍵向左鍵</b>：上一頁</li>
+                <li>按 <b>方向鍵向右鍵</b>：下一頁</li>
+                <li>按 <b>Esc</b> 鍵：退出全螢幕</li>
+                <li>按 <b>R</b> 鍵：重置簡報</li>
+            </ul>
+            <p>轉換成簡報後，使用左右箭頭鍵或點擊畫面左右方的 "<" ">" 按鈕來切換頁面。</p>
+            <p>按下"匯出"，投影片會自動播放一次，完成後會出現下載PDF的視窗，再另存新檔即可。</p>
+        </div>
+    </div>
+    <div class="mindmap-overlay" id="mindmapOverlay">
+        <div class="mindmap-content">
+            <h2>AI生成心智圖參考指令</h2>
+            <p id="mindmapInstructions">生成有關"某主題"宣導用的心智圖，只使用 #、##、###、**、-，有 ## 或 ### 那一行，就不要使用 **，給我 markdown 語法的文字。</p>
+            <button onclick="copyInstructions()">複製參考指令</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+        let currentSlide = 0;
+        let totalSlides;
+        let pdf;
+        let firstSlideTitle;
+
+        function convertToSlides() {
+            const markdownText = document.getElementById('markdownInput').value;
+            const slidesContainer = document.getElementById('slides');
+            slidesContainer.innerHTML = '';
+            const lines = markdownText.split('\n');
+            let slide = null;
+            let contentContainer = null;
+            totalSlides = 0;
+            let currentTitle = '';
+            let currentContent = [];
+
+            const addSlide = () => {
+                if (slide) {
+                    if (currentContent.length > 10) {
+                        const midpoint = Math.ceil(currentContent.length / 2);
+                        const firstHalf = currentContent.slice(0, midpoint);
+                        const secondHalf = currentContent.slice(midpoint);
+
+                        addContentToSlide(firstHalf, slide);
+
+                        appendSlide(slide, slidesContainer);
+                        totalSlides++;
+
+                        let newSlide = createSlide();
+                        let h2 = document.createElement('h2');
+                        h2.innerHTML = currentTitle;
+                        newSlide.appendChild(h2);
+                        let newContentContainer = document.createElement('div');
+                        newContentContainer.className = 'content';
+                        newSlide.appendChild(newContentContainer);
+                        addContentToSlide(secondHalf, newSlide);
+
+                        appendSlide(newSlide, slidesContainer);
+                        totalSlides++;
+                    } else {
+                        addContentToSlide(currentContent, slide);
+                        appendSlide(slide, slidesContainer);
+                        totalSlides++;
+                    }
+                    currentContent = [];
+                }
+            };
+
+            const addContentToSlide = (content, slide) => {
+                let contentContainer = slide.querySelector('.content');
+                content.forEach(line => {
+                    let p = document.createElement('p');
+                    p.innerHTML = processMarkdown(line);
+                    contentContainer.appendChild(p);
+                });
+            };
+
+            lines.forEach(line => {
+                if (line.startsWith('# ')) {
+                    addSlide();
+                    slide = createFirstSlide(); // Create a specially styled first slide
+                    let h1 = document.createElement('h1');
+                    h1.innerHTML = processMarkdown(line.slice(2));
+                    slide.appendChild(h1);
+                    firstSlideTitle = processMarkdown(line.slice(2));
+                } else if (line.startsWith('## ')) {
+                    addSlide();
+                    slide = createSlide();
+                    let h2 = document.createElement('h2');
+                    h2.innerHTML = processMarkdown(line.slice(3));
+                    slide.appendChild(h2);
+                    contentContainer = document.createElement('div');
+                    contentContainer.className = 'content';
+                    slide.appendChild(contentContainer);
+                    currentTitle = processMarkdown(line.slice(3));
+                } else if (contentContainer) {
+                    currentContent.push(line);
+                }
+            });
+
+            addSlide();
+
+            addEndingSlide(slidesContainer); // Add the ending slide
+            totalSlides++;
+
+            addPageNumbers(totalSlides);
+
+            document.getElementById('inputArea').style.display = 'none';
+            document.getElementById('presentationArea').style.display = 'block';
+            changeColor('purple'); // Apply the 'purple' theme
+            showSlide(currentSlide);
+        }
+
+        function createSlide() {
+            const slide = document.createElement('div');
+            slide.className = 'slide';
+            const slideNav = document.createElement('div');
+            slideNav.className = 'slide-nav';
+            const prevButton = document.createElement('button');
+            prevButton.className = 'prev-slide';
+            prevButton.innerHTML = '&lt;';
+            prevButton.onclick = prevSlide;
+            const nextButton = document.createElement('button');
+            nextButton.className = 'next-slide';
+            nextButton.innerHTML = '&gt;';
+            nextButton.onclick = nextSlide;
+            slideNav.appendChild(prevButton);
+            slideNav.appendChild(nextButton);
+            slide.appendChild(slideNav);
+            return slide;
+        }
+
+        function createFirstSlide() {
+            const slide = document.createElement('div');
+            slide.className = 'slide';
+            slide.style.background = 'linear-gradient(to bottom, #1e3c72, #2a5298)';
+            const slideNav = document.createElement('div');
+            slideNav.className = 'slide-nav';
+            const prevButton = document.createElement('button');
+            prevButton.className = 'prev-slide';
+            prevButton.innerHTML = '&lt;';
+            prevButton.onclick = prevSlide;
+            const nextButton = document.createElement('button');
+            nextButton.className = 'next-slide';
+            nextButton.innerHTML = '&gt;';
+            nextButton.onclick = nextSlide;
+            slideNav.appendChild(prevButton);
+            slideNav.appendChild(nextButton);
+            slide.appendChild(slideNav);
+            return slide;
+        }
+
+        function appendSlide(slide, container) {
+            container.appendChild(slide);
+        }
+
+        function processMarkdown(line) {
+            return line
+                .replace(/#### (.*?)(\n|$)/g, '<span class="blue-text">$1</span>')
+                .replace(/### (.*?)(\n|$)/g, '<span class="orange-text">$1</span>')
+                .replace(/\*\*(.*?)\*\*/g, '<span class="bold-text">$1</span>');
+        }
+
+        function showSlide(index) {
+            const slides = document.querySelectorAll('.slide');
+            slides.forEach((slide, i) => {
+                slide.style.display = i === index ? 'flex' : 'none';
+                const pageNumber = slide.querySelector('.page-number');
+                if (pageNumber) {
+                    pageNumber.textContent = `${i + 1}/${slides.length}`;
+                }
+            });
+            adjustFontSize(slides[index]);
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                showSlide(currentSlide);
+            }
+        }
+
+        function nextSlide() {
+            const slides = document.querySelectorAll('.slide');
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                showSlide(currentSlide);
+            } else if (currentSlide === slides.length - 1) {
+                exitFullScreen(); // Exit full screen on the last slide when pressing next
+            }
+        }
+
+        function adjustFontSize(slide) {
+            let fontSize = 32; // Start with a reasonable font size
+            const maxHeight = window.innerHeight * 0.9; // Allow some margin
+            slide.style.fontSize = `${fontSize}px`;
+
+            while (slide.scrollHeight > maxHeight && fontSize > 10) { // Decrease font size until content fits
+                fontSize -= 2;
+                slide.style.fontSize = `${fontSize}px`;
+            }
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowLeft') {
+                prevSlide();
+            } else if (event.key === 'ArrowRight') {
+                nextSlide();
+            } else if (event.key === 'f') {
+                toggleFullScreen();
+            } else if (event.key === 'r') {
+                resetPresentation();
+            } else if (event.key >= '1' && event.key <= '7') {
+                changeColorByKey(event.key);
+            }
+        });
+
+        async function toggleFullScreen() {
+            const presentationArea = document.getElementById('slides');
+            if (!document.fullscreenElement) {
+                if (presentationArea.requestFullscreen) {
+                    await presentationArea.requestFullscreen();
+                } else if (presentationArea.mozRequestFullScreen) { // Firefox
+                    await presentationArea.mozRequestFullScreen();
+                } else if (presentationArea.webkitRequestFullscreen) { // Chrome, Safari and Opera
+                    await presentationArea.webkitRequestFullscreen();
+                } else if (presentationArea.msRequestFullscreen) { // IE/Edge
+                    await presentationArea.msRequestFullscreen();
+                }
+                showNavigation();
+            } else {
+                if (document.exitFullscreen) {
+                    await document.exitFullscreen();
+                } else if (document.mozCancelFullScreen) { // Firefox
+                    await document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) { // Chrome, Safari and Opera
+                    await document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { // IE/Edge
+                    await document.msExitFullscreen();
+                }
+                hideNavigation();
+            }
+        }
+
+        function showNavigation() {
+            const prevButton = document.querySelector('.prev-slide');
+            const nextButton = document.querySelector('.next-slide');
+            const slideNav = document.querySelector('.slide-nav');
+
+            if (prevButton) prevButton.style.display = 'block';
+            if (nextButton) nextButton.style.display = 'block';
+            if (slideNav) slideNav.style.display = 'flex';
+        }
+
+        function hideNavigation() {
+            const prevButton = document.querySelector('.prev-slide');
+            const nextButton = document.querySelector('.next-slide');
+            const slideNav = document.querySelector('.slide-nav');
+
+            if (prevButton) prevButton.style.display = 'none';
+            if (nextButton) nextButton.style.display = 'none';
+            if (slideNav) slideNav.style.display = 'none';
+        }
+
+        function changeColor(color) {
+            let bgColor, slideBgColor, slideTextColor, h2BgColor;
+
+            switch(color) {
+                case 'sunset':
+                    bgColor = 'linear-gradient(to right, #ff7e5f, #feb47b)';
+                    slideBgColor = 'linear-gradient(to bottom, #ff7e5f, #feb47b)';
+                    slideTextColor = '#fff';
+                    h2BgColor = '#d2691e';
+                    break;
+                case 'forest':
+                    bgColor = 'linear-gradient(to right, #a8e063, #56ab2f)';
+                    slideBgColor = 'linear-gradient(to bottom, #a8e063, #56ab2f)';
+                    slideTextColor = '#000';
+                    h2BgColor = '#228b22';
+                    break;
+                case 'ocean':
+                    bgColor = 'linear-gradient(to right, #00c6ff, #0072ff)';
+                    slideBgColor = 'linear-gradient(to bottom, #00c6ff, #0072ff)';
+                    slideTextColor = '#fff';
+                    h2BgColor = '#00008b';
+                    break;
+                case 'dusk':
+                    bgColor = 'linear-gradient(to right, #2c3e50, #fd746c)';
+                    slideBgColor = 'linear-gradient(to bottom, #2c3e50, #fd746c)';
+                    slideTextColor = '#fff';
+                    h2BgColor = '#8b0000';
+                    break;
+                case 'purple':
+                    bgColor = 'linear-gradient(to right, #8e44ad, #c39bd3)';
+                    slideBgColor = 'linear-gradient(to bottom, #8e44ad, #c39bd3)';
+                    slideTextColor = '#fff';
+                    h2BgColor = '#6a0dad';
+                    break;
+                case 'green':
+                    bgColor = 'linear-gradient(to right, #28a745, #81c784)';
+                    slideBgColor = 'linear-gradient(to bottom, #28a745, #81c784)';
+                    slideTextColor = '#fff';
+                    h2BgColor = '#006400';
+                    break;
+                case 'red':
+                    bgColor = 'linear-gradient(to right, #e74c3c, #e57373)';
+                    slideBgColor = 'linear-gradient(to bottom, #e74c3c, #e57373)';
+                    slideTextColor = '#fff';
+                    h2BgColor = '#8b0000';
+                    break;
+            }
+
+            document.body.style.background = bgColor;
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.style.background = slideBgColor;
+                slide.style.color = slideTextColor;
+                const h2 = slide.querySelector('h2');
+                if (h2) {
+                    h2.style.backgroundColor = h2BgColor;
+                }
+                const pageNumber = slide.querySelector('.page-number');
+                if (pageNumber) {
+                    pageNumber.style.color = slideTextColor;
+                }
+            });
+        }
+
+        function changeColorByKey(key) {
+            const colors = ['sunset', 'forest', 'ocean', 'dusk', 'purple', 'green', 'red'];
+            const color = colors[parseInt(key) - 1];
+            changeColor(color);
+        }
+
+        function addPageNumbers(totalSlides) {
+            const slides = document.querySelectorAll('.slide');
+            slides.forEach((slide, index) => {
+                const pageNumber = document.createElement('div');
+                pageNumber.className = 'page-number';
+                pageNumber.textContent = `${index + 1}/${totalSlides}`;
+                slide.appendChild(pageNumber);
+            });
+        }
+
+        function addEndingSlide(container) {
+            const slide = document.createElement('div');
+            slide.className = 'slide';
+            const endingText = document.createElement('h1');
+            endingText.textContent = '簡報結束';
+            endingText.style.fontSize = '120px';
+            endingText.style.fontWeight = 'bold';
+            endingText.style.textShadow = '2px 2px 4px rgba(0, 0, 0, 0.5)';
+            slide.appendChild(endingText);
+
+            const slideNav = document.createElement('div');
+            slideNav.className = 'slide-nav';
+            const prevButton = document.createElement('button');
+            prevButton.className = 'prev-slide';
+            prevButton.innerHTML = '&lt;';
+            prevButton.onclick = prevSlide;
+            const nextButton = document.createElement('button');
+            nextButton.className = 'next-slide';
+            nextButton.innerHTML = '&gt;';
+            nextButton.onclick = nextSlide;
+            slideNav.appendChild(prevButton);
+            slideNav.appendChild(nextButton);
+            slide.appendChild(slideNav);
+
+            container.appendChild(slide);
+        }
+
+        function resetPresentation() {
+            document.getElementById('markdownInput').value = '';
+            document.getElementById('slides').innerHTML = '';
+            document.getElementById('inputArea').style.display = 'block';
+            document.getElementById('presentationArea').style.display = 'none';
+            currentSlide = 0;
+            document.body.style.background = '#e0f7fa'; // Reset background to original
+        }
+
+        function exitFullScreen() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            } else if (document.mozFullScreenElement) { // Firefox
+                document.mozCancelFullScreen();
+            } else if (document.webkitFullscreenElement) { // Chrome, Safari and Opera
+                document.webkitExitFullscreen();
+            } else if (document.msFullscreenElement) { // IE/Edge
+                document.msExitFullscreen();
+            }
+        }
+
+        function showInstructions() {
+            document.getElementById('instructionsOverlay').style.display = 'flex';
+        }
+
+        function hideInstructions() {
+            document.getElementById('instructionsOverlay').style.display = 'none';
+        }
+
+        function showMindmapInstructions() {
+            document.getElementById('mindmapOverlay').style.display = 'flex';
+        }
+
+        function hideMindmapInstructions() {
+            document.getElementById('mindmapOverlay').style.display = 'none';
+        }
+
+        function copyInstructions() {
+            const instructions = document.getElementById('mindmapInstructions').textContent;
+            navigator.clipboard.writeText(instructions).then(() => {
+                alert('參考指令已複製到剪貼簿');
+            }, () => {
+                alert('複製失敗，請重試');
+            });
+        }
+
+        document.getElementById('instructionsOverlay').addEventListener('click', (event) => {
+            if (event.target === document.getElementById('instructionsOverlay')) {
+                hideInstructions();
+            }
+        });
+
+        document.getElementById('mindmapOverlay').addEventListener('click', (event) => {
+            if (event.target === document.getElementById('mindmapOverlay')) {
+                hideMindmapInstructions();
+            }
+        });
+
+        async function startSaveSlides() {
+            const slides = document.querySelectorAll('.slide');
+            pdf = new jspdf.jsPDF({
+                orientation: 'landscape',
+                unit: 'px',
+                format: [slides[0].clientWidth, slides[0].clientHeight]
+            });
+            currentSlide = 0; // 从第一页开始
+            await toggleFullScreen();
+            showSlide(currentSlide); // 显示第一页
+            setTimeout(saveCurrentSlide, 1000); // 延迟1秒以确保进入全屏模式
+        }
+
+        async function saveCurrentSlide() {
+            const slides = document.querySelectorAll('.slide');
+            if (currentSlide < slides.length) {
+                await html2canvas(slides[currentSlide], { useCORS: true, allowTaint: true }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/jpeg');
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+                    if (currentSlide === 0) {
+                        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                    } else {
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                    }
+                }).catch(error => {
+                    console.error('html2canvas error:', error);
+                });
+
+                currentSlide++;
+                if (currentSlide < slides.length) {
+                    showSlide(currentSlide);
+                    setTimeout(saveCurrentSlide, 1000); // Adjust delay as needed
+                } else {
+                    pdf.save(`${firstSlideTitle}.pdf`);
+                    exitFullScreen();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
